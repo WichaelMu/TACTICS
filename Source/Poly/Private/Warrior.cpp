@@ -7,7 +7,6 @@
 #include "Components/StaticMeshComponent.h"
 #include "UObject/ConstructorHelpers.h"
 #include "MapMaker.h"
-#include "DrawDebugHelpers.h"
 #include "MW.h"
 #include "TimerManager.h"
 
@@ -101,7 +100,7 @@ void AWarrior::MoveTo(ABlock* TargetBlock)
 			//	
 			//	if (i > 0)
 			//	{
-			//		DrawDebugLine(GetWorld(), Path[i]->GetWarriorPosition(), Path[i - 1]->GetWarriorPosition(), FColor::White, true, 10, 0U, 10);
+			//		//DrawDebugLine(GetWorld(), Path[i]->GetWarriorPosition(), Path[i - 1]->GetWarriorPosition(), FColor::White, true, 10, 0U, 10);
 			//	}
 			//}
 
@@ -114,6 +113,7 @@ void AWarrior::MoveTo(ABlock* TargetBlock)
 	}
 
 	UpdateBlock(TargetBlock);
+	DealDamage();
 }
 
 // Update block information when moving between blocks.
@@ -178,9 +178,13 @@ TArray<ABlock*> AWarrior::GetAttackablePositions()
 	{
 		for (int32 i = 0; i < 8; ++i)
 		{
-			if (CurrentBlock->Get(i)->Occupant)
+			AWarrior* SurroundingOccupant = CurrentBlock->Get(i)->Occupant;
+			if (SurroundingOccupant)
 			{
-				Attackable.Add(CurrentBlock->Get(i));
+				if (SurroundingOccupant->Affiliation != Affiliation)
+				{
+					Attackable.Add(CurrentBlock->Get(i));
+				}
 			}
 		}
 	}
@@ -196,6 +200,11 @@ void AWarrior::Retreat()
 void AWarrior::Attack()
 {
 	MoveTo(FindKillableHuman());
+}
+
+void AWarrior::Search()
+{
+	MoveTo(MoveTowardsConcentrationOfHumans());
 }
 
 ABlock* AWarrior::FindSafestBlock()
@@ -245,6 +254,7 @@ ABlock* AWarrior::FindKillableHuman()
 			// Find a block where HumanAttacked > 0, but less than AIAttacked.
 			if (Block->HumanAttacked <= Block->AIAttacked)
 			{
+				// If this AI is within can attack, go to that block.
 				if (Block->IsNextToHuman())
 				{
 					return Block;
@@ -258,13 +268,91 @@ ABlock* AWarrior::FindKillableHuman()
 	// If you can find a HumanAttacked > 0, but it is NOT less than AIAttacked, wait for reinforcements and stay out of range.
 	if (DesirableBlocks.Num() == 0)
 	{
-		return FindSafestBlock();
+		float CohesionDecision = FMath::RandRange(0.f, 1.f);
+
+		// TODO: Make this be determined on |some| factor.
+		// Choose whether to band with other AIs, or go towards humans.
+		return CohesionDecision < .5f ? MoveTowardsConcentrationOfHumans() : MoveTowardsConcentrationOfAI();
 	}
 
 	// Find a block that minimises the distance to an enemy.
 	ABlock* BestMove = CurrentBlock->GetClosestBlockToAHuman(DesirableBlocks);
 
 	return BestMove;
+}
+
+ABlock* AWarrior::MoveTowardsConcentrationOfHumans()
+{
+	if (!UMapMaker::HumanConcentration)
+	{
+		UMapMaker::GenerateLargestConcentrationOfHumans();
+	}
+
+	ABlock* HumanHeatmap = UMapMaker::HumanConcentration;
+	ABlock* TowardsHeatmap = CurrentBlock;
+
+	float Closest = INT_MAX;
+	FVector RelativePosition = HumanHeatmap->GetWarriorPosition();
+	TArray<ABlock*> Traversable = CurrentBlock->GetTraversableBlocks();
+
+	// Only check over traversable twice since we're going in a direction.
+	for (int i = 0; i < Traversable.Num(); i += 2)
+	{
+		ABlock* Block = Traversable[i];
+		float ClosingDistance = FVector::DistSquared(Block->GetWarriorPosition(), RelativePosition);
+		
+		if (ClosingDistance < Closest)
+		{
+			Closest = ClosingDistance;
+			TowardsHeatmap = Block;
+		}
+	}
+
+	return TowardsHeatmap;
+}
+
+ABlock* AWarrior::MoveTowardsConcentrationOfAI()
+{
+	if (!UMapMaker::AIConcentration)
+	{
+		UMapMaker::GenerateLargestConcentrationOfAI();
+	}
+
+	ABlock* AIHeatmap = UMapMaker::AIConcentration;
+	ABlock* TowardsHeatmap = CurrentBlock;
+
+	float Closest = INT_MAX;
+	FVector RelativePosition = AIHeatmap->GetWarriorPosition();
+	TArray<ABlock*> Traversable = CurrentBlock->GetTraversableBlocks();
+
+	// Only check over traversable twice since we're going in a direction.
+	for (int i = 0; i < Traversable.Num(); i += 2)
+	{
+		ABlock* Block = Traversable[i];
+		float ClosingDistance = FVector::DistSquared(Block->GetWarriorPosition(), RelativePosition);
+
+		if (ClosingDistance < Closest)
+		{
+			Closest = ClosingDistance;
+			TowardsHeatmap = Block;
+		}
+	}
+
+	return TowardsHeatmap;
+}
+
+void AWarrior::DealDamage()
+{
+	TArray<ABlock*> SurroundingBlocks = GetAttackablePositions();
+
+	for (ABlock* Block : SurroundingBlocks)
+	{
+		AWarrior* Occupant = Block->Occupant;
+
+		Occupant->Health -= Damage;
+	}
+
+	Health -= SurroundingBlocks.Num() / 2.f;
 }
 
 void AWarrior::MoveTowards()

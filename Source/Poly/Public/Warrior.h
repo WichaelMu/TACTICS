@@ -67,6 +67,7 @@ public:
 
 	void Retreat();
 	void Attack();
+	void Search();
 
 private:
 	FVector DirectionToPath;
@@ -77,4 +78,10 @@ private:
 
 	// Attack.
 	ABlock* FindKillableHuman();
+
+	// Search.
+	ABlock* MoveTowardsConcentrationOfHumans();
+	ABlock* MoveTowardsConcentrationOfAI();
+
+	void DealDamage();
 };

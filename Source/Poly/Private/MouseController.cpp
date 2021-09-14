@@ -6,6 +6,7 @@
 #include "Engine/World.h"
 #include "Warrior.h"
 #include "Block.h"
+#include "MapMaker.h"
 
 // Sets default values
 AMouseController::AMouseController()
@@ -56,15 +57,21 @@ void AMouseController::BlockClicked(ABlock* ClickedBlock)
 
 void AMouseController::EndTurn()
 {
+	// Ending Human turn.
 	if (CurrentTurn == EAffiliation::HUMAN)
 	{
 		CurrentTurn = EAffiliation::AI;
 
+		UMapMaker::GenerateLargestConcentrationOfHumans();
+		UMapMaker::GenerateLargestConcentrationOfAI();
+
 		// After making moves, clear traversable[?] and end turn.
 		UMW::RunAI();
+
+		// After the AI has made its moves, end the turn.
 		EndTurn();
 	}
-	else
+	else // Ending AI turn.
 	{
 		CurrentTurn = EAffiliation::HUMAN;
 	}

@@ -24,6 +24,10 @@ protected:
 
 public:
 	static UMapMaker* Instance;
+	static void GenerateLargestConcentrationOfHumans();
+	static void GenerateLargestConcentrationOfAI();
+	static ABlock* HumanConcentration;
+	static ABlock* AIConcentration;
 
 	ABlock* RandomBlock();
 	TArray<ABlock*> Map;
@@ -60,7 +64,7 @@ public:
 	UPROPERTY(EditInstanceOnly, Category = Players)
 		TSubclassOf<AWarrior> Warrior;
 	UPROPERTY(EditInstanceOnly, Category = Players)
-		uint32 NumberOfWarriors;
+		int NumberOfWarriors;
 
 private:
 
@@ -76,3 +80,5 @@ private:
 };
 
 UMapMaker* UMapMaker::Instance = nullptr;
+ABlock* UMapMaker::HumanConcentration = nullptr;
+ABlock* UMapMaker::AIConcentration = nullptr;

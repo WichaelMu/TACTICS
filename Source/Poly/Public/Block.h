@@ -95,6 +95,8 @@ public:
 	ABlock* GetClosestBlockToAHuman(TArray<ABlock*>);
 	bool IsNextToHuman();
 
+	void DeductAttacks(EAffiliation);
+
 private:
 
 	void SearchDepthInitialise(TArray<ABlock*>&, uint8);

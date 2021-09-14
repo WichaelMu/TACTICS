@@ -144,17 +144,12 @@ void UMW::DetermineMoves()
 {
 	TArray<TPair<AWarrior*, ABlock*>> Moves;
 	TArray<AWarrior*> AIWarriors;
-	TArray<AWarrior* > HumanWarriors;
 
 	for (AWarrior* Warrior : UMapMaker::Instance->AllWarriors)
 	{
 		if (Warrior->Affiliation == EAffiliation::AI)
 		{
 			AIWarriors.Add(Warrior);
-		}
-		else
-		{
-			HumanWarriors.Add(Warrior);
 		}
 	}
 

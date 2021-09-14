@@ -206,7 +206,6 @@ ABlock* ABlock::GetClosestBlockToAHuman(TArray<ABlock*> RangeOfHumans)
 	{
 		if (Query->IsNextToHuman())
 		{
-			UMW::Log(FString("Found block with direct human."));
 			return Query;
 		}
 
@@ -236,5 +235,17 @@ bool ABlock::IsNextToHuman()
 	}
 
 	return false;
+}
+
+void ABlock::DeductAttacks(EAffiliation DeductingAffiliation)
+{
+	if (DeductingAffiliation == EAffiliation::HUMAN)
+	{
+		HumanAttacked--;
+	}
+	else
+	{
+		AIAttacked--;
+	}
 }
 
