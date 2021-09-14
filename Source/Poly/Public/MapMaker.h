@@ -68,6 +68,8 @@ public:
 
 private:
 
+	static int MapMidPoint();
+
 	void PlaceBlocks();
 	ABlock* SpawnBlock(UClass*, const int&, const int&, EType);
 	void ConnectBlocks();

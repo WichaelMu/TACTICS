@@ -4,6 +4,7 @@
 #include "MapMaker.h"
 #include "Engine/World.h"
 #include "Warrior.h"
+#include "MW.h"
 
 // Sets default values for this component's properties
 UMapMaker::UMapMaker()
@@ -45,7 +46,7 @@ void UMapMaker::GenerateLargestConcentrationOfHumans()
 {
 	TArray<ABlock*> CopyOfMap = Instance->Map;
 
-	ABlock* MaxHuman = CopyOfMap[0];
+	ABlock* MaxHuman = CopyOfMap[MapMidPoint()];
 	int LargestHuman = 0;
 
 	for (int i = 0; i < CopyOfMap.Num(); ++i)
@@ -56,7 +57,7 @@ void UMapMaker::GenerateLargestConcentrationOfHumans()
 		{
 			break;
 		}
-		else 
+		else
 		{
 			if (CopyOfMap[i]->HumanAttacked > LargestHuman)
 			{
@@ -74,7 +75,7 @@ void UMapMaker::GenerateLargestConcentrationOfAI()
 {
 	TArray<ABlock*> CopyOfMap = Instance->Map;
 
-	ABlock* MaxAI = CopyOfMap[0];
+	ABlock* MaxAI = CopyOfMap[MapMidPoint()];
 	int LargestAI = 0;
 
 	for (int i = 0; i < CopyOfMap.Num(); ++i)
@@ -105,6 +106,14 @@ ABlock* UMapMaker::RandomBlock()
 	int RandomBlockIndex = FMath::RandRange(0, Map.Num() - 1);
 
 	return Map[RandomBlockIndex];
+}
+
+int UMapMaker::MapMidPoint()
+{
+	int IX = Instance->XMap / 2;
+	int IY = Instance->YMap / 2;
+
+	return IY * Instance->XMap + IX;
 }
 
 void UMapMaker::PlaceBlocks()
@@ -211,7 +220,7 @@ void UMapMaker::SpawnWarriors()
 	{
 		ABlock* RandomWarriorSpawnPoint = RandomBlock();
 
-		while (RandomWarriorSpawnPoint->Occupant || RandomWarriorSpawnPoint->Type == EType::MOUNTAIN || RandomWarriorSpawnPoint->Type == EType::WATER)
+		while (!UMW::IsBlockTraversable(RandomWarriorSpawnPoint))
 		{
 			RandomWarriorSpawnPoint = RandomBlock();
 		}
@@ -224,7 +233,7 @@ void UMapMaker::SpawnWarriors()
 		SpawnedWarrior1->AssignAffiliationColours();
 		AllWarriors.Add(SpawnedWarrior1);
 
-		while (RandomWarriorSpawnPoint->Occupant || RandomWarriorSpawnPoint->Type == EType::MOUNTAIN || RandomWarriorSpawnPoint->Type == EType::WATER)
+		while (!UMW::IsBlockTraversable(RandomWarriorSpawnPoint))
 		{
 			RandomWarriorSpawnPoint = RandomBlock();
 		}

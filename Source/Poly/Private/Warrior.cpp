@@ -272,12 +272,15 @@ ABlock* AWarrior::FindKillableHuman()
 	if (DesirableBlocks.Num() == 0)
 	{
 		return MoveTowardsConcentrationOfHumans();
+
 		float CohesionDecision = FMath::RandRange(0.f, 1.f);
 
 		// TODO: Make this be determined on |some| factor.
 		// Choose whether to band with other AIs, or go towards humans.
 		return CohesionDecision < .5f ? MoveTowardsConcentrationOfHumans() : MoveTowardsConcentrationOfAI();
 	}
+
+	CurrentPath.Empty();
 
 	// Find a block that minimises the distance to an enemy.
 	ABlock* BestMove = CurrentBlock->GetClosestBlockToAHuman(DesirableBlocks);
@@ -292,6 +295,13 @@ ABlock* AWarrior::MoveTowardsConcentrationOfHumans()
 	}
 
 	ABlock* HumanHeatmap = UMapMaker::HumanConcentration;
+
+	CurrentPath = UMW::Pathfind(CurrentBlock, HumanHeatmap);
+	if (CurrentPath.Num() > 1)
+	{
+		return CurrentPath.Last(1);
+	}
+
 	ABlock* TowardsHeatmap = CurrentBlock;
 
 	float Closest = INT_MAX;
@@ -321,6 +331,15 @@ ABlock* AWarrior::MoveTowardsConcentrationOfAI()
 	}
 
 	ABlock* AIHeatmap = UMapMaker::AIConcentration;
+
+	CurrentPath = UMW::Pathfind(CurrentBlock, AIHeatmap);
+	if (CurrentPath.Num() > 1)
+	{
+		return CurrentPath.Last(1);
+	}
+
+	CurrentPath.Empty();
+
 	ABlock* TowardsHeatmap = CurrentBlock;
 
 	float Closest = INT_MAX;

@@ -26,6 +26,8 @@ public:
 	static void RunAI();
 	static void Log(FString);
 
+	static bool IsBlockTraversable(ABlock*);
+
 private:
 
 	static void DetermineMoves();

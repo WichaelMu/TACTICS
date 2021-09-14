@@ -10,14 +10,14 @@
 
 bool UMW::Pathfind(ABlock* Origin, ABlock* Destination, TArray<ABlock*>& Path)
 {
+	for (ABlock* Block : UMapMaker::Instance->Map) { Block->G = INT_MAX; }
+	
 	TArray<ABlock*> Open;
 	Open.Add(Origin);
 	Origin->G = 0;
 	Origin->H = FVector::Dist(Origin->GetActorLocation(), Destination->GetActorLocation());
 	while (Open.Num() > 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("RUNNING"));
-
 		ABlock* Current = Open[0];
 
 		float LowestF = INT_MAX;
@@ -34,7 +34,6 @@ bool UMW::Pathfind(ABlock* Origin, ABlock* Destination, TArray<ABlock*>& Path)
 
 		if (Current == Destination)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("%d"), Path.Num());
 			ABlock* Traverse = Destination;
 			while (Traverse != Origin)
 			{
@@ -47,17 +46,23 @@ bool UMW::Pathfind(ABlock* Origin, ABlock* Destination, TArray<ABlock*>& Path)
 
 		for (int i = 0; i < 8; ++i)
 		{
-			float FUpdatedCost = Current->G + FVector::DistSquared(Current->GetActorLocation(), Current->Get(i)->GetActorLocation());
-			if (FUpdatedCost < Current->Get(i)->G)
+			ABlock* Query = Current->Get(i);
+			if (Query)
 			{
-				Current->Get(i)->G = FUpdatedCost;
-				Current->Get(i)->H = FVector::DistSquared(Current->Get(i)->GetActorLocation(), Destination->GetActorLocation());
-				Current->Get(i)->Parent = Current;
-
-				if (!Open.Contains(Current->Get(i)))
+				if (IsBlockTraversable(Query))
 				{
-					UE_LOG(LogTemp, Warning, TEXT("ADDED"));
-					Open.Add(Current->Get(i));
+					float FUpdatedCost = Current->G + FVector::DistSquared(Current->GetActorLocation(), Query->GetActorLocation());
+					if (FUpdatedCost < Query->G)
+					{
+						Query->G = FUpdatedCost;
+						Query->H = FVector::DistSquared(Query->GetActorLocation(), Destination->GetActorLocation());
+						Query->Parent = Current;
+
+						if (!Open.Contains(Query))
+						{
+							Open.Add(Query);
+						}
+					}
 				}
 			}
 		}
@@ -106,25 +111,27 @@ TArray<ABlock*> UMW::Pathfind(ABlock* Origin, ABlock* Destination)
 
 		for (int i = 0; i < 8; ++i)
 		{
-			if (Current->Get(i))
+			ABlock* Query = Current->Get(i);
+			if (Query)
 			{
-				float FUpdatedCost = Current->G + FVector::DistSquared(Current->GetActorLocation(), Current->Get(i)->GetActorLocation());
-				if (FUpdatedCost < Current->Get(i)->G)
+				if (IsBlockTraversable(Query))
 				{
-					Current->Get(i)->G = FUpdatedCost;
-					Current->Get(i)->H = FVector::DistSquared(Current->Get(i)->GetActorLocation(), Destination->GetActorLocation());
-					Current->Get(i)->Parent = Current;
-
-					if (!Open.Contains(Current->Get(i)))
+					float FUpdatedCost = Current->G + FVector::DistSquared(Current->GetActorLocation(), Query->GetActorLocation());
+					if (FUpdatedCost < Query->G)
 					{
-						Open.Add(Current->Get(i));
+						Query->G = FUpdatedCost;
+						Query->H = FVector::DistSquared(Query->GetActorLocation(), Destination->GetActorLocation());
+						Query->Parent = Current;
+
+						if (!Open.Contains(Query))
+						{
+							Open.Add(Query);
+						}
 					}
 				}
 			}
 		}
 	}
-
-	UE_LOG(LogTemp, Error, TEXT("No Path found!"));
 
 	return Path;
 }
@@ -137,6 +144,11 @@ void UMW::RunAI()
 void UMW::Log(FString Message)
 {
 	UE_LOG(LogTemp, Warning, TEXT("%s"), *Message);
+}
+
+bool UMW::IsBlockTraversable(ABlock* Query)
+{
+	return !(Query->Occupant || Query->Type == EType::MOUNTAIN || Query->Type == EType::WATER);
 }
 
 void UMW::DetermineMoves()

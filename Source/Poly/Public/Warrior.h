@@ -84,6 +84,7 @@ private:
 	// Search.
 	ABlock* MoveTowardsConcentrationOfHumans();
 	ABlock* MoveTowardsConcentrationOfAI();
+	TArray<ABlock*> CurrentPath;
 
 	void DealDamage();
 	bool HealthBelowZero();
