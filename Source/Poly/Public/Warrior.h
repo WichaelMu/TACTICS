@@ -47,7 +47,9 @@ public:
 	int Revive();
 	// The damage this warrior will deal.
 	const float Damage = 2;
-	TArray<ABlock*> GetAttackablePositions();
+	void DeductHealth();
+
+	TArray<AWarrior*> GetAttackableWarriors();
 	
 	// The block this warrior is standing on.
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -84,4 +86,6 @@ private:
 	ABlock* MoveTowardsConcentrationOfAI();
 
 	void DealDamage();
+	bool HealthBelowZero();
+	void KillThisWarrior();
 };

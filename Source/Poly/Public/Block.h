@@ -89,18 +89,19 @@ public:
 	ABlock* Get(uint8 Orientation) const;
 
 	TArray<ABlock*> GetTraversableBlocks();
-	TArray<ABlock*> SearchAtDepth(uint8 Range);
+	TArray<ABlock*> SearchAtDepth(uint8 Range, const bool& bIgnoreOccupants = true);
 
 	TArray<AWarrior*> SurroundingEnemiesInRange(EAffiliation);
 	ABlock* GetClosestBlockToAHuman(TArray<ABlock*>);
 	bool IsNextToHuman();
 
 	void DeductAttacks(EAffiliation);
+	void AppendAttacks(EAffiliation);
 
 private:
 
-	void SearchDepthInitialise(TArray<ABlock*>&, uint8);
-	void SearchDepth(TArray<ABlock*>& Blocks, uint8 Depth, TSet<ABlock*>& Visited, TQueue<ABlock*>& Breadth);
+	void SearchDepthInitialise(TArray<ABlock*>&, uint8, const bool& bIgnoreOccupants = true);
+	void SearchDepthLogic(TArray<ABlock*>& Blocks, uint8 Depth, TSet<ABlock*>& Visited, TQueue<ABlock*>& Breadth, const bool&);
 
 
 };

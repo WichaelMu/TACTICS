@@ -4,7 +4,6 @@
 #include "MW.h"
 #include "Block.h"
 #include "MapMaker.h"
-#include "Moves.h"
 #include "MouseController.h"
 #include "Warrior.h"
 
@@ -142,7 +141,6 @@ void UMW::Log(FString Message)
 
 void UMW::DetermineMoves()
 {
-	TArray<TPair<AWarrior*, ABlock*>> Moves;
 	TArray<AWarrior*> AIWarriors;
 
 	for (AWarrior* Warrior : UMapMaker::Instance->AllWarriors)

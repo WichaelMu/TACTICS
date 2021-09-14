@@ -2,7 +2,6 @@
 
 
 #include "Block.h"
-#include "Math/NumericLimits.h"
 #include "MouseController.h"
 
 // Sets default values
@@ -116,26 +115,26 @@ TArray<ABlock*> ABlock::GetTraversableBlocks()
 	return Blocks;
 }
 
-TArray<ABlock*> ABlock::SearchAtDepth(uint8 Range)
+TArray<ABlock*> ABlock::SearchAtDepth(uint8 Range, const bool& bIgnoreOccupants)
 {
 	TArray<ABlock*> Result;
 
-	SearchDepthInitialise(Result, Range);
+	SearchDepthInitialise(Result, Range, bIgnoreOccupants);
 
 	return Result;
 }
 
 // Searches for blocks at Depth.
-void ABlock::SearchDepthInitialise(TArray<ABlock*>& Blocks, uint8 Depth)
+void ABlock::SearchDepthInitialise(TArray<ABlock*>& Blocks, uint8 Depth, const bool& bIgnoreOccupants)
 {
 	TSet<ABlock*> Visited;
 	TQueue<ABlock*> Breadth;
 	Breadth.Enqueue(this);
 
-	SearchDepth(Blocks, Depth, Visited, Breadth);
+	SearchDepthLogic(Blocks, Depth, Visited, Breadth, bIgnoreOccupants);
 }
 
-void ABlock::SearchDepth(TArray<ABlock*>& Blocks, uint8 Depth, TSet<ABlock*>& Visited, TQueue<ABlock*>& Breadth)
+void ABlock::SearchDepthLogic(TArray<ABlock*>& Blocks, uint8 Depth, TSet<ABlock*>& Visited, TQueue<ABlock*>& Breadth, const bool& bIgnoreOccupants)
 {
 	if (Depth <= 0) { return; }
 
@@ -152,8 +151,16 @@ void ABlock::SearchDepth(TArray<ABlock*>& Blocks, uint8 Depth, TSet<ABlock*>& Vi
 
 			if (QueryBlock)
 			{
-				// TODO: If QueryBlock is a mountain/untraversable, continue.
-				if (QueryBlock->Occupant || QueryBlock->Type == EType::MOUNTAIN || QueryBlock->Type == EType::WATER)
+				if (bIgnoreOccupants)
+				{
+					if (QueryBlock->Occupant)
+					{
+						continue;
+					}
+				}
+
+				// @TODO: If QueryBlock is a mountain/untraversable, continue.
+				if (QueryBlock->Type == EType::MOUNTAIN || QueryBlock->Type == EType::WATER)
 				{
 					continue;
 				}
@@ -173,7 +180,7 @@ void ABlock::SearchDepth(TArray<ABlock*>& Blocks, uint8 Depth, TSet<ABlock*>& Vi
 		}
 	}
 
-	SearchDepth(Blocks, Depth - 1, Visited, TempQueue);
+	SearchDepthLogic(Blocks, Depth - 1, Visited, TempQueue, bIgnoreOccupants);
 }
 
 // Gets any warrior that is in-range of this block, as well as in the future.
@@ -239,13 +246,49 @@ bool ABlock::IsNextToHuman()
 
 void ABlock::DeductAttacks(EAffiliation DeductingAffiliation)
 {
+	TArray<ABlock*> Depth = SearchAtDepth(3, false);
+
 	if (DeductingAffiliation == EAffiliation::HUMAN)
 	{
 		HumanAttacked--;
+
+		for (ABlock* Block : Depth)
+		{
+			Block->HumanAttacked = FMath::Max<int>(0, Block->HumanAttacked - 1);
+		}
 	}
 	else
 	{
 		AIAttacked--;
+
+		for (ABlock* Block : Depth)
+		{
+			Block->AIAttacked = FMath::Max<int>(0, Block->AIAttacked - 1);
+		}
+	}
+}
+
+void ABlock::AppendAttacks(EAffiliation DeductingAffiliation)
+{
+	TArray<ABlock*> Depth = SearchAtDepth(3, false);
+
+	if (DeductingAffiliation == EAffiliation::HUMAN)
+	{
+		HumanAttacked++;
+
+		for (ABlock* Block : Depth)
+		{
+			Block->HumanAttacked++;
+		}
+	}
+	else
+	{
+		AIAttacked--;
+
+		for (ABlock* Block : Depth)
+		{
+			Block->AIAttacked++;
+		}
 	}
 }
 

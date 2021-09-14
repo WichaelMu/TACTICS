@@ -129,37 +129,12 @@ void AWarrior::UpdateBlock(ABlock* NewBlock)
 
 void AWarrior::UpdateBlockAttacks(ABlock* From, ABlock* To)
 {
-	TArray<ABlock*> Before = From->SearchAtDepth(3);
-	TArray<ABlock*> After = To->SearchAtDepth(3);
-
-	bool bIsHuman = Affiliation == EAffiliation::HUMAN;
-
 	if (From != To)
 	{
-		for (ABlock* Previous : Before)
-		{
-			if (bIsHuman)
-			{
-				Previous->HumanAttacked--;
-			}
-			else
-			{
-				Previous->AIAttacked--;
-			}
-		}
+		From->DeductAttacks(Affiliation);
 	}
 
-	for (ABlock* Future : After)
-	{
-		if (bIsHuman)
-		{
-			Future->HumanAttacked++;
-		}
-		else
-		{
-			Future->AIAttacked++;
-		}
-	}
+	To->AppendAttacks(Affiliation);
 }
 
 int AWarrior::Revive()
@@ -169,10 +144,38 @@ int AWarrior::Revive()
 	return NewHealth;
 }
 
-// Gets every ABlock around CurrentBlock if it is occupied.
-TArray<ABlock*> AWarrior::GetAttackablePositions()
+bool AWarrior::HealthBelowZero()
 {
-	TArray<ABlock*> Attackable;
+	return Health <= 0;
+}
+
+void AWarrior::KillThisWarrior()
+{
+	// Deregister this Warrior as part of all warriors.
+	UMapMaker::Instance->AllWarriors.Remove(this);
+	
+	// Move this warrior somewhere out of the screen.
+	SetActorLocation(FVector(40000.f));
+
+	CurrentBlock->DeductAttacks(Affiliation);
+	CurrentBlock->Occupant = nullptr;
+	CurrentBlock = nullptr;
+}
+
+void AWarrior::DeductHealth()
+{
+	Health -= Damage;
+
+	if (HealthBelowZero())
+	{
+		KillThisWarrior();
+	}
+}
+
+// Gets every ABlock around CurrentBlock if it is occupied.
+TArray<AWarrior*> AWarrior::GetAttackableWarriors()
+{
+	TArray<AWarrior*> Attackable;
 
 	if (CurrentBlock)
 	{
@@ -183,7 +186,7 @@ TArray<ABlock*> AWarrior::GetAttackablePositions()
 			{
 				if (SurroundingOccupant->Affiliation != Affiliation)
 				{
-					Attackable.Add(CurrentBlock->Get(i));
+					Attackable.Add(SurroundingOccupant);
 				}
 			}
 		}
@@ -237,7 +240,7 @@ ABlock* AWarrior::FindSafestBlock()
 
 ABlock* AWarrior::FindKillableHuman()
 {
-	// If this block is overwhelmed by humans, run away.
+	// If this block is overwhelmed by humans, run away || stay out of range.
 	if (CurrentBlock->AIAttacked < CurrentBlock->HumanAttacked)
 	{
 		return FindSafestBlock();
@@ -268,6 +271,7 @@ ABlock* AWarrior::FindKillableHuman()
 	// If you can find a HumanAttacked > 0, but it is NOT less than AIAttacked, wait for reinforcements and stay out of range.
 	if (DesirableBlocks.Num() == 0)
 	{
+		return MoveTowardsConcentrationOfHumans();
 		float CohesionDecision = FMath::RandRange(0.f, 1.f);
 
 		// TODO: Make this be determined on |some| factor.
@@ -277,7 +281,6 @@ ABlock* AWarrior::FindKillableHuman()
 
 	// Find a block that minimises the distance to an enemy.
 	ABlock* BestMove = CurrentBlock->GetClosestBlockToAHuman(DesirableBlocks);
-
 	return BestMove;
 }
 
@@ -295,8 +298,7 @@ ABlock* AWarrior::MoveTowardsConcentrationOfHumans()
 	FVector RelativePosition = HumanHeatmap->GetWarriorPosition();
 	TArray<ABlock*> Traversable = CurrentBlock->GetTraversableBlocks();
 
-	// Only check over traversable twice since we're going in a direction.
-	for (int i = 0; i < Traversable.Num(); i += 2)
+	for (int i = 0; i < Traversable.Num(); ++i)
 	{
 		ABlock* Block = Traversable[i];
 		float ClosingDistance = FVector::DistSquared(Block->GetWarriorPosition(), RelativePosition);
@@ -343,16 +345,14 @@ ABlock* AWarrior::MoveTowardsConcentrationOfAI()
 
 void AWarrior::DealDamage()
 {
-	TArray<ABlock*> SurroundingBlocks = GetAttackablePositions();
+	TArray<AWarrior*> SurroundingWarriors = GetAttackableWarriors();
 
-	for (ABlock* Block : SurroundingBlocks)
+	for (AWarrior* Warrior : SurroundingWarriors)
 	{
-		AWarrior* Occupant = Block->Occupant;
-
-		Occupant->Health -= Damage;
+		Warrior->DeductHealth();
 	}
 
-	Health -= SurroundingBlocks.Num() / 2.f;
+	Health -= SurroundingWarriors.Num() * .5f;
 }
 
 void AWarrior::MoveTowards()

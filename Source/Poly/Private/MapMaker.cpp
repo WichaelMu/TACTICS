@@ -50,7 +50,7 @@ void UMapMaker::GenerateLargestConcentrationOfHumans()
 
 	for (int i = 0; i < CopyOfMap.Num(); ++i)
 	{
-		bool bAIMax = LargestHuman >= Instance->NumberOfWarriors / 2 - 1;
+		bool bAIMax = LargestHuman >= Instance->Map.Num() / 2 - 1;
 
 		if (bAIMax)
 		{
@@ -210,21 +210,19 @@ void UMapMaker::SpawnWarriors()
 	for (int i = 0; i < NumberOfWarriors; ++i)
 	{
 		ABlock* RandomWarriorSpawnPoint = RandomBlock();
-		if (i == 0)
+
+		while (RandomWarriorSpawnPoint->Occupant || RandomWarriorSpawnPoint->Type == EType::MOUNTAIN || RandomWarriorSpawnPoint->Type == EType::WATER)
 		{
-			while (RandomWarriorSpawnPoint->Occupant || RandomWarriorSpawnPoint->Type == EType::MOUNTAIN || RandomWarriorSpawnPoint->Type == EType::WATER)
-			{
-				RandomWarriorSpawnPoint = RandomBlock();
-			}
-
-			// Spawn 1 warrior, for each team, given NumberOfWarriors.
-
-			AWarrior* SpawnedWarrior1 = GetWorld()->SpawnActor<AWarrior>(Warrior, FVector::ZeroVector, FRotator::ZeroRotator);
-			SpawnedWarrior1->OnSpawn(RandomWarriorSpawnPoint, EAffiliation::HUMAN);
-			// Defined in blueprint.
-			SpawnedWarrior1->AssignAffiliationColours();
-			AllWarriors.Add(SpawnedWarrior1);
+			RandomWarriorSpawnPoint = RandomBlock();
 		}
+
+		// Spawn 1 warrior, for each team, given NumberOfWarriors.
+
+		AWarrior* SpawnedWarrior1 = GetWorld()->SpawnActor<AWarrior>(Warrior, FVector::ZeroVector, FRotator::ZeroRotator);
+		SpawnedWarrior1->OnSpawn(RandomWarriorSpawnPoint, EAffiliation::HUMAN);
+		// Defined in blueprint.
+		SpawnedWarrior1->AssignAffiliationColours();
+		AllWarriors.Add(SpawnedWarrior1);
 
 		while (RandomWarriorSpawnPoint->Occupant || RandomWarriorSpawnPoint->Type == EType::MOUNTAIN || RandomWarriorSpawnPoint->Type == EType::WATER)
 		{
