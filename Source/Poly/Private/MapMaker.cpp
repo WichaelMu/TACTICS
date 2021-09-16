@@ -138,10 +138,7 @@ void UMapMaker::PlaceBlocks()
 
 			if (bUseFalloffMap)
 			{
-				if (FalloffMap.Num() != 0)
-				{
-					Perlin -= FalloffMap[y * XMap + x];
-				}
+				Perlin -= FalloffMap[y * XMap + x];
 			}
 
 			if (Perlin < TypeLimits.X)
@@ -190,24 +187,24 @@ void UMapMaker::ConnectBlocks()
 			}
 
 			//	North
-			if (IsIndexInMapRange(x, y + 1, Index)) { Map[Index]->North = Map[Index + YMap]; }
+			if (IsIndexInMapRange(x	   , y + 1, Index)) { Map[Index]->North		= Map[ Index       + YMap];	}
 			//	North-East
-			if (IsIndexInMapRange(x - 1, y + 1, Index)) { Map[Index]->NorthEast = Map[(Index - 1) + YMap]; }
+			if (IsIndexInMapRange(x - 1, y + 1, Index)) { Map[Index]->NorthEast	= Map[(Index - 1) + YMap];	}
 			//	North-West
-			if (IsIndexInMapRange(x + 1, y + 1, Index)) { Map[Index]->NorthWest = Map[(Index + 1) + YMap]; }
+			if (IsIndexInMapRange(x + 1, y + 1, Index)) { Map[Index]->NorthWest	= Map[(Index + 1) + YMap];	}
 
 			//	South
-			if (IsIndexInMapRange(x, y - 1, Index)) { Map[Index]->South = Map[Index - YMap]; }
+			if (IsIndexInMapRange(x    , y - 1, Index)) { Map[Index]->South		= Map[ Index       - YMap];	}
 			//	South-East
-			if (IsIndexInMapRange(x - 1, y - 1, Index)) { Map[Index]->SouthEast = Map[(Index - 1) - YMap]; }
+			if (IsIndexInMapRange(x - 1, y - 1, Index)) { Map[Index]->SouthEast	= Map[(Index - 1) - YMap];	}
 			//	South-West
-			if (IsIndexInMapRange(x + 1, y - 1, Index)) { Map[Index]->SouthWest = Map[(Index + 1) - YMap]; }
+			if (IsIndexInMapRange(x + 1, y - 1, Index)) { Map[Index]->SouthWest	= Map[(Index + 1) - YMap];	}
 
 			//	East
-			if (IsIndexInMapRange(x - 1, y, Index)) { Map[Index]->East = Map[Index - 1]; }
+			if (IsIndexInMapRange(x - 1, y    , Index)) { Map[Index]->East		= Map[ Index - 1];		}
 
 			//	West
-			if (IsIndexInMapRange(x + 1, y, Index)) { Map[Index]->West = Map[Index + 1]; }
+			if (IsIndexInMapRange(x + 1, y    , Index)) { Map[Index]->West		= Map[ Index + 1];		}
 		}
 	}
 }

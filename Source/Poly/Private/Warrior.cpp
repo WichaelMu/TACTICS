@@ -17,8 +17,6 @@ AWarrior::AWarrior()
 	PrimaryActorTick.bCanEverTick = false;
 
 
-	const FVector WarriorScale = FVector(.5f, .5f, 1.5f);
-
 	// Make a new cube root component.
 	UBoxComponent* Cube = CreateDefaultSubobject<UBoxComponent>(TEXT("Root Component"));
 	RootComponent = Cube;
@@ -127,6 +125,7 @@ void AWarrior::UpdateBlock(ABlock* NewBlock)
 	CurrentBlock = NewBlock;
 }
 
+// Update the attack references on the block.
 void AWarrior::UpdateBlockAttacks(ABlock* From, ABlock* To)
 {
 	if (From != To)
@@ -137,6 +136,7 @@ void AWarrior::UpdateBlockAttacks(ABlock* From, ABlock* To)
 	To->AppendAttacks(Affiliation);
 }
 
+// Health some health.
 int AWarrior::Revive()
 {
 	int NewHealth = FMath::Max<int>(Health + 3, 20);
@@ -144,11 +144,13 @@ int AWarrior::Revive()
 	return NewHealth;
 }
 
+// Has the health fallen below zero?
 bool AWarrior::HealthBelowZero()
 {
 	return Health <= 0;
 }
 
+// Disassociate this warrior as part of Poly.
 void AWarrior::KillThisWarrior()
 {
 	// Deregister this Warrior as part of all warriors.
@@ -162,6 +164,7 @@ void AWarrior::KillThisWarrior()
 	CurrentBlock = nullptr;
 }
 
+// Take damage.
 void AWarrior::DeductHealth()
 {
 	Health -= Damage;

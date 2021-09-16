@@ -42,6 +42,7 @@ void ABlock::Selected(bool bSelected)
 	}
 }
 
+// Identical to C#'s IComparable<ABlock> CompareTo(ABlock*) override; See /SOUTHLAND.
 int ABlock::CompareTo(ABlock* Comparison)
 {
 	int Compare;
@@ -97,6 +98,7 @@ ABlock* ABlock::Get(uint8 Orientation) const
 	}
 }
 
+/// <summary>Get Warrior-traversable blocks.</summary>
 TArray<ABlock*> ABlock::GetTraversableBlocks()
 {
 	TArray<ABlock*> Blocks;
@@ -115,11 +117,15 @@ TArray<ABlock*> ABlock::GetTraversableBlocks()
 	return Blocks;
 }
 
-TArray<ABlock*> ABlock::SearchAtDepth(uint8 Range, const bool& bIgnoreOccupants)
+/// <summary>Begins a breadth-first search at a depth limiter.</summary>
+/// <param name="Depth">The maximum depth to search to.</param>
+/// <param name="bIgnoreOccupants">Ignore ABlocks with occupants?</param>
+/// <returns>The BFS at a limit of depth, whilst considering occupants.</returns>
+TArray<ABlock*> ABlock::SearchAtDepth(uint8 Depth, const bool& bIgnoreOccupants)
 {
 	TArray<ABlock*> Result;
 
-	SearchDepthInitialise(Result, Range, bIgnoreOccupants);
+	SearchDepthInitialise(Result, Depth, bIgnoreOccupants);
 
 	return Result;
 }
@@ -183,7 +189,8 @@ void ABlock::SearchDepthLogic(TArray<ABlock*>& Blocks, uint8 Depth, TSet<ABlock*
 	SearchDepthLogic(Blocks, Depth - 1, Visited, TempQueue, bIgnoreOccupants);
 }
 
-// Gets any warrior that is in-range of this block, as well as in the future.
+/// <summary>Gets any warrior that is in-range of this block.</summary>
+/// <param name="RelativeTo">Finds opposing affiliations, relative to this Affiliation.</param>
 TArray<AWarrior*> ABlock::SurroundingEnemiesInRange(EAffiliation RelativeTo)
 {
 	TArray<ABlock*> Range = SearchAtDepth(3);
@@ -204,6 +211,9 @@ TArray<AWarrior*> ABlock::SurroundingEnemiesInRange(EAffiliation RelativeTo)
 	return Enemies;
 }
 
+/// <summary>The closest block to a Human out of the Range of Humans.</summary>
+/// <param name="RangeOfHumans">The range of blocks to check for the closest Human.</param>
+/// <returns>The ABlock to close in on.</returns>
 ABlock* ABlock::GetClosestBlockToAHuman(TArray<ABlock*> RangeOfHumans)
 {
 	float MinDistance = INT_MAX;
@@ -227,6 +237,7 @@ ABlock* ABlock::GetClosestBlockToAHuman(TArray<ABlock*> RangeOfHumans)
 	return Furthest;
 }
 
+/// <summary>Is this block directly next to a Human?</summary>
 bool ABlock::IsNextToHuman()
 {
 	for (int i = 0; i < 8; ++i)
@@ -244,6 +255,8 @@ bool ABlock::IsNextToHuman()
 	return false;
 }
 
+/// <summary>Deduct the attacking heuristic.</summary>
+/// <param name="DeductingAffiliation">The Affiliation to deduct from.</param>
 void ABlock::DeductAttacks(EAffiliation DeductingAffiliation)
 {
 	TArray<ABlock*> Depth = SearchAtDepth(3, false);
@@ -268,6 +281,8 @@ void ABlock::DeductAttacks(EAffiliation DeductingAffiliation)
 	}
 }
 
+/// <summary>Append the attacking heuristic.</summary>
+/// <param name="DeductingAffiliation">The Affiliation to append to.</param>
 void ABlock::AppendAttacks(EAffiliation DeductingAffiliation)
 {
 	TArray<ABlock*> Depth = SearchAtDepth(3, false);
