@@ -16,6 +16,16 @@ UMapMaker::UMapMaker()
 	// ...
 
 	Instance = this;
+
+
+	Roughness = .15f;
+
+	FalloffBias = 4.4f;
+	CurveStrength = 3.f;
+
+	SplitLimit = .43f;
+	SplitDistance = .63f;
+	SplitRoughness = .04f;
 }
 
 
@@ -144,14 +154,14 @@ void UMapMaker::PlaceBlocks()
 			// Set Perlin to be between 0 and 1.
 			Perlin = (Perlin + 1) / 2;
 
-			if (bUseFalloffMap)
-			{
-				Perlin -= FalloffMap[Position];
-			}
-
 			if (bGenerateContinents)
 			{
 				Perlin -= Continents[Position];
+			}
+
+			if (bUseFalloffMap)
+			{
+				Perlin -= FalloffMap[Position];
 			}
 
 			if (Perlin < TypeLimits.X)
@@ -272,15 +282,21 @@ TArray<float> UMapMaker::GenerateFalloffMap()
 
 			float ClosestToEdge = FMath::Max(FMath::Abs(XFalloff), FMath::Abs(YFalloff));
 
-			float ClosestRaisedToStrength = FMath::Pow(ClosestToEdge, CurveStrength);
-			float ClosestBias = FMath::Pow(FalloffBias - FalloffBias * ClosestToEdge, CurveStrength);
-			float Function = ClosestRaisedToStrength / (ClosestRaisedToStrength + ClosestBias);
-
-			FalloffValues[Position] = Function;
+			FalloffValues[Position] = Smooth(ClosestToEdge, CurveStrength, FalloffBias);
 		}
 	}
 
 	return FalloffValues;
+}
+
+// (v ^ a) / ( (b - bv) ^ a).
+float UMapMaker::Smooth(const float& v, const float& a, const float& b)
+{
+	float Numerator = FMath::Pow(v, a);
+	float Denominator = FMath::Pow(b - b * v, a);
+	float Function = Numerator / (Numerator + Denominator);
+
+	return Function;
 }
 
 TArray<float> UMapMaker::GenerateContinents()
@@ -302,7 +318,7 @@ TArray<float> UMapMaker::GenerateContinents()
 
 			if (Perlin < SplitLimit)
 			{
-				Continents[Position] = FMath::Clamp<float>(Perlin + SplitStrength, 0, 1);
+				Continents[Position] = FMath::Clamp<float>(Perlin + SplitDistance, 0, 1);
 			}
 		}
 	}

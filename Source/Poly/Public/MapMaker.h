@@ -40,20 +40,28 @@ public:
 		int YMap = 10;
 
 
+protected:
+
+
 	UPROPERTY(EditInstanceOnly, Category = "Terrain|Falloff")
 		bool bUseFalloffMap;
+	/*Centre falloff modification. Higher = More land.*/
 	UPROPERTY(EditInstanceOnly, Category = "Terrain|Falloff")
 		float FalloffBias;
+	/*The smoothness of the transition. Higher = Sharper falloff edges.*/
 	UPROPERTY(EditInstanceOnly, Category = "Terrain|Falloff")
 		float CurveStrength;
 
 
 	UPROPERTY(EditInstanceOnly, Category = "Terrain|Continents")
 		bool bGenerateContinents;
+	/*The limit of Perlin Noise to begin splitting up the landmass. Higher = Large oceans.*/
 	UPROPERTY(EditInstanceOnly, Category = "Terrain|Continents", meta = (UIMin = "0", UIMax = "1", ClampMin = "0", ClampMax = "1"))
 		float SplitLimit;
+	/*How much should the splits take from the terrain. Higher = Larger splits.*/
 	UPROPERTY(EditInstanceOnly, Category = "Terrain|Continents", meta = (UIMin = "0", UIMax = "1", ClampMin = "0", ClampMax = "1"))
-		float SplitStrength;
+		float SplitDistance;
+	/*How often should these splits occur. Higher = Spots of water.*/
 	UPROPERTY(EditInstanceOnly, Category = "Terrain|Continents", meta = (UIMin = "0", UIMax = "0.1", ClampMin = "0", ClampMax = "0.1"))
 		float SplitRoughness;
 
@@ -90,6 +98,7 @@ private:
 
 	TArray<float> GenerateFalloffMap();
 	TArray<float> GenerateContinents();
+	static float Smooth(const float&, const float&, const float&);
 
 	//	If X and Y are in the ranges of Map.
 	bool IsIndexInMapRange(const uint16& X, const uint16& Y, const uint16& Index) const;
