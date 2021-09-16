@@ -38,12 +38,25 @@ public:
 		int XMap = 10;
 	UPROPERTY(EditInstanceOnly)
 		int YMap = 10;
-	UPROPERTY(EditInstanceOnly)
+
+
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Falloff")
 		bool bUseFalloffMap;
-	UPROPERTY(EditInstanceOnly)
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Falloff")
 		float FalloffBias;
-	UPROPERTY(EditInstanceOnly)
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Falloff")
 		float CurveStrength;
+
+
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Continents")
+		bool bGenerateContinents;
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Continents", meta = (UIMin = "0", UIMax = "1", ClampMin = "0", ClampMax = "1"))
+		float SplitLimit;
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Continents", meta = (UIMin = "0", UIMax = "1", ClampMin = "0", ClampMax = "1"))
+		float SplitStrength;
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Continents", meta = (UIMin = "0", UIMax = "0.1", ClampMin = "0", ClampMax = "0.1"))
+		float SplitRoughness;
+
 
 	UPROPERTY(EditInstanceOnly, Category = Terrain)
 		TSubclassOf<ABlock> Water;
@@ -76,6 +89,7 @@ private:
 	void SpawnWarriors();
 
 	TArray<float> GenerateFalloffMap();
+	TArray<float> GenerateContinents();
 
 	//	If X and Y are in the ranges of Map.
 	bool IsIndexInMapRange(const uint16& X, const uint16& Y, const uint16& Index) const;

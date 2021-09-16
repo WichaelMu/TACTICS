@@ -126,11 +126,19 @@ void UMapMaker::PlaceBlocks()
 		FalloffMap = GenerateFalloffMap();
 	}
 
+	TArray<float> Continents;
+	if (bGenerateContinents)
+	{
+		Continents = GenerateContinents();
+	}
+
 	// Spawn blocks.
 	for (int y = 0; y < YMap; ++y)
 	{
 		for (int x = 0; x < XMap; ++x)
 		{
+			int Position = y * XMap + x;
+
 			float Perlin = FMath::PerlinNoise2D(FVector2D(x + Offset, y + Offset) * Roughness);
 
 			// Set Perlin to be between 0 and 1.
@@ -138,7 +146,12 @@ void UMapMaker::PlaceBlocks()
 
 			if (bUseFalloffMap)
 			{
-				Perlin -= FalloffMap[y * XMap + x];
+				Perlin -= FalloffMap[Position];
+			}
+
+			if (bGenerateContinents)
+			{
+				Perlin -= Continents[Position];
 			}
 
 			if (Perlin < TypeLimits.X)
@@ -268,6 +281,33 @@ TArray<float> UMapMaker::GenerateFalloffMap()
 	}
 
 	return FalloffValues;
+}
+
+TArray<float> UMapMaker::GenerateContinents()
+{
+	TArray<float> Continents;
+	Continents.Init(0, XMap * YMap);
+
+	float Offset = FMath::RandRange(-10000.f, 10000.f);
+
+	for (int y = 0; y < YMap; ++y)
+	{
+		for (int x = 0; x < XMap; ++x)
+		{
+			int Position = y * XMap + x;
+
+			float Perlin = FMath::PerlinNoise2D(FVector2D(x + Offset, y + Offset) * SplitRoughness);
+
+			Perlin = (Perlin + 1) / 2;
+
+			if (Perlin < SplitLimit)
+			{
+				Continents[Position] = FMath::Clamp<float>(Perlin + SplitStrength, 0, 1);
+			}
+		}
+	}
+
+	return Continents;
 }
 
 // If X and Y are in the Map, given the relative Index.
