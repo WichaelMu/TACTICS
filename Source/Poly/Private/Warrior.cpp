@@ -59,6 +59,12 @@ void AWarrior::Tick(float DeltaTime)
 
 }
 
+// Positive = AI advantage. Negative = Human advantage. 0 = Equal material.
+int32 AWarrior::EvaluateMap()
+{
+	return NumberOfAI - NumberOfHuman;
+}
+
 // When this warrior is spawned into the world.
 void AWarrior::OnSpawn(ABlock* SpawnedBlock, EAffiliation TeamAffiliation)
 {
@@ -162,6 +168,45 @@ void AWarrior::KillThisWarrior()
 	CurrentBlock->DeductAttacks(Affiliation);
 	CurrentBlock->Occupant = nullptr;
 	CurrentBlock = nullptr;
+
+	if (Affiliation == EAffiliation::HUMAN)
+	{
+		NumberOfHuman--;
+	}
+	else
+	{
+		NumberOfAI--;
+	}
+}
+
+ABlock* AWarrior::MoveTowardsBlock(ABlock* Relative)
+{
+	CurrentPath = UMW::Pathfind(CurrentBlock, Relative);
+	if (CurrentPath.Num() > 1)
+	{
+		return CurrentPath.Last(1);
+	}
+
+	ABlock* Towards = CurrentBlock;
+
+	float Closest = INT_MAX;
+	FVector RelativePosition = Relative->GetWarriorPosition();
+	TArray<ABlock*> Traversable = CurrentBlock->GetTraversableBlocks();
+
+	for (int i = 0; i < Traversable.Num(); ++i)
+	{
+		ABlock* Block = Traversable[i];
+		float ClosingDistance = FVector::DistSquared(Block->GetWarriorPosition(), RelativePosition);
+
+		if (ClosingDistance < Closest)
+		{
+			Closest = ClosingDistance;
+			Towards = Block;
+		}
+	}
+
+	CurrentPath.Empty();
+	return Towards;
 }
 
 // Take damage.
@@ -243,6 +288,13 @@ ABlock* AWarrior::FindSafestBlock()
 
 ABlock* AWarrior::FindKillableHuman()
 {
+	// AI has already won.
+	if (NumberOfHuman == 0)
+	{
+		UMW::Log("AI HAS WON.");
+		return MoveTowardsConcentrationOfHumans(); // Will default to centre.
+	}
+
 	// If this block is overwhelmed by humans, run away || stay out of range.
 	if (CurrentBlock->AIAttacked < CurrentBlock->HumanAttacked)
 	{
@@ -255,13 +307,14 @@ ABlock* AWarrior::FindKillableHuman()
 
 	for (ABlock* Block : Traversable)
 	{
+		// Find a block where HumanAttacked > 0:
 		if (Block->HumanAttacked > 0)
 		{
-			// Find a block where HumanAttacked > 0, but less than AIAttacked.
+			// But less than AIAttacked.
 			if (Block->HumanAttacked <= Block->AIAttacked)
 			{
 				// If this AI is within can attack, go to that block.
-				if (Block->IsNextToHuman())
+				if (Block->IsNextToAffiliation(EAffiliation::HUMAN))
 				{
 					return Block;
 				}
@@ -274,13 +327,34 @@ ABlock* AWarrior::FindKillableHuman()
 	// If you can find a HumanAttacked > 0, but it is NOT less than AIAttacked, wait for reinforcements and stay out of range.
 	if (DesirableBlocks.Num() == 0)
 	{
-		return MoveTowardsConcentrationOfHumans();
-
-		float CohesionDecision = FMath::RandRange(0.f, 1.f);
-
-		// TODO: Make this be determined on |some| factor.
 		// Choose whether to band with other AIs, or go towards humans.
-		return CohesionDecision < .5f ? MoveTowardsConcentrationOfHumans() : MoveTowardsConcentrationOfAI();
+
+		int32 Evaluation = EvaluateMap();
+
+		// If the difference in warriors is 2 either way:
+		if (Evaluation < 2 && Evaluation > -2)
+		{
+			// If still quite healthy, alight to target Humans.
+			if (Health > 14)
+			{
+				return MoveTowardsConcentrationOfHumans();
+			}
+
+			// Otherwise, cohesion with AI.
+			return MoveTowardsConcentrationOfAI();
+		}
+		
+		// If AI has 3 more warriors than Human:
+		if (Evaluation >= 3)
+		{
+			// Align to nearest Human.
+			return FindNearestAffiliation(EAffiliation::HUMAN);
+		}
+		else
+		{
+			// Cohesion with AI.
+			return FindNearestAffiliation(EAffiliation::AI);
+		}
 	}
 
 	CurrentPath.Empty();
@@ -299,31 +373,7 @@ ABlock* AWarrior::MoveTowardsConcentrationOfHumans()
 
 	ABlock* HumanHeatmap = UMapMaker::HumanConcentration;
 
-	CurrentPath = UMW::Pathfind(CurrentBlock, HumanHeatmap);
-	if (CurrentPath.Num() > 1)
-	{
-		return CurrentPath.Last(1);
-	}
-
-	ABlock* TowardsHeatmap = CurrentBlock;
-
-	float Closest = INT_MAX;
-	FVector RelativePosition = HumanHeatmap->GetWarriorPosition();
-	TArray<ABlock*> Traversable = CurrentBlock->GetTraversableBlocks();
-
-	for (int i = 0; i < Traversable.Num(); ++i)
-	{
-		ABlock* Block = Traversable[i];
-		float ClosingDistance = FVector::DistSquared(Block->GetWarriorPosition(), RelativePosition);
-		
-		if (ClosingDistance < Closest)
-		{
-			Closest = ClosingDistance;
-			TowardsHeatmap = Block;
-		}
-	}
-
-	return TowardsHeatmap;
+	return MoveTowardsBlock(HumanHeatmap);
 }
 
 ABlock* AWarrior::MoveTowardsConcentrationOfAI()
@@ -335,34 +385,55 @@ ABlock* AWarrior::MoveTowardsConcentrationOfAI()
 
 	ABlock* AIHeatmap = UMapMaker::AIConcentration;
 
-	CurrentPath = UMW::Pathfind(CurrentBlock, AIHeatmap);
-	if (CurrentPath.Num() > 1)
+	return MoveTowardsBlock(AIHeatmap);
+}
+
+ABlock* AWarrior::FindNearestAffiliation(const EAffiliation& Nearest)
+{
+	if (NumberOfHuman <= 0)
 	{
-		return CurrentPath.Last(1);
+		UMW::Log("NUMBER OF HUMANS IS ZERO");
+		return CurrentBlock;
 	}
 
-	CurrentPath.Empty();
+	if (NumberOfAI <= 1) {
+		UMW::Log("NUMBER OF AI IS ZERO");
+		return CurrentBlock;
+	}
 
-	ABlock* TowardsHeatmap = CurrentBlock;
+	TSet<ABlock*> Visited;
+	TQueue<ABlock*> Breadth;
+	Breadth.Enqueue(CurrentBlock);
+	ABlock* NextToAffiliation = CurrentBlock;
 
-	float Closest = INT_MAX;
-	FVector RelativePosition = AIHeatmap->GetWarriorPosition();
-	TArray<ABlock*> Traversable = CurrentBlock->GetTraversableBlocks();
-
-	// Only check over traversable twice since we're going in a direction.
-	for (int i = 0; i < Traversable.Num(); i += 2)
+	while (!Breadth.IsEmpty())
 	{
-		ABlock* Block = Traversable[i];
-		float ClosingDistance = FVector::DistSquared(Block->GetWarriorPosition(), RelativePosition);
+		ABlock* FrontBlock = *Breadth.Peek();
+		Breadth.Pop();
 
-		if (ClosingDistance < Closest)
+		for (int i = 0; i < 8; ++i)
 		{
-			Closest = ClosingDistance;
-			TowardsHeatmap = Block;
+			ABlock* QueryBlock = FrontBlock->Get(i);
+
+			if (QueryBlock)
+			{
+				if (QueryBlock->IsNextToAffiliation(Nearest))
+				{
+					NextToAffiliation = QueryBlock;
+					Breadth.Empty();
+					break;
+				}
+
+				if (!Visited.Contains(QueryBlock))
+				{
+					Visited.Add(QueryBlock);
+					Breadth.Enqueue(QueryBlock);
+				}
+			}
 		}
 	}
 
-	return TowardsHeatmap;
+	return MoveTowardsBlock(NextToAffiliation);
 }
 
 void AWarrior::DealDamage()

@@ -84,7 +84,7 @@ TArray<ABlock*> UMW::Pathfind(ABlock* Origin, ABlock* Destination)
 	TArray<ABlock*> Open;
 	Open.Add(Origin);
 	Origin->G = 0;
-	Origin->H = FVector::Dist(Origin->GetActorLocation(), Destination->GetActorLocation());
+	Origin->H = FVector::DistSquared(Origin->GetActorLocation(), Destination->GetActorLocation());
 	while (Open.Num() > 0)
 	{
 		ABlock* Current = Open[0];
@@ -103,13 +103,6 @@ TArray<ABlock*> UMW::Pathfind(ABlock* Origin, ABlock* Destination)
 
 		if (Current == Destination)
 		{
-			ABlock* Traverse = Destination;
-			while (Traverse != Origin)
-			{
-				Path.Add(Traverse);
-				Traverse = Traverse->Parent;
-			}
-
 			return Path;
 		}
 
@@ -140,6 +133,14 @@ TArray<ABlock*> UMW::Pathfind(ABlock* Origin, ABlock* Destination)
 	return Path;
 }
 
+/// <summary>Whether or not this block is traversable.</summary>
+/// <param name="Query">The ABlock in question.</param>
+/// <returns>False if this block has an occupant or is a EType::MOUNTAIN or EType::WATER.</returns>
+bool UMW::IsBlockTraversable(ABlock* Query)
+{
+	return !(Query->Occupant || Query->Type == EType::MOUNTAIN || Query->Type == EType::WATER);
+}
+
 /// <summary>Compute and determine the AI for Warriors->Affiliation == EAffiliation::AI.</summary>
 void UMW::RunAI()
 {
@@ -151,14 +152,6 @@ void UMW::RunAI()
 void UMW::Log(FString Message)
 {
 	UE_LOG(LogTemp, Warning, TEXT("%s"), *Message);
-}
-
-/// <summary>Whether or not this block is traversable.</summary>
-/// <param name="Query">The ABlock in question.</param>
-/// <returns>False if this block has an occupant or is a EType::MOUNTAIN or EType::WATER.</returns>
-bool UMW::IsBlockTraversable(ABlock* Query)
-{
-	return !(Query->Occupant || Query->Type == EType::MOUNTAIN || Query->Type == EType::WATER);
 }
 
 void UMW::DetermineMoves()

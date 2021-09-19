@@ -93,7 +93,7 @@ public:
 
 	TArray<AWarrior*> SurroundingEnemiesInRange(EAffiliation);
 	ABlock* GetClosestBlockToAHuman(TArray<ABlock*>);
-	bool IsNextToHuman();
+	bool IsNextToAffiliation(const EAffiliation&);
 
 	void DeductAttacks(EAffiliation);
 	void AppendAttacks(EAffiliation);

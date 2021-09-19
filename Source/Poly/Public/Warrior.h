@@ -30,6 +30,11 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 
+	static int32 NumberOfAI;
+	static int32 NumberOfHuman;
+	static int32 EvaluateMap();
+
+
 	void OnSpawn(ABlock*, EAffiliation);
 
 
@@ -43,7 +48,7 @@ public:
 	void UpdateBlockAttacks(ABlock*, ABlock*);
 
 
-	float Health;
+	int Health;
 	int Revive();
 	// The damage this warrior will deal.
 	const float Damage = 2;
@@ -57,10 +62,6 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Affiliation)
 		EAffiliation Affiliation;
-	UPROPERTY(EditDefaultsOnly, BLueprintReadOnly, Category = Affiliation)
-		FColor AffiliateColour1;
-	UPROPERTY(EditDefaultsOnly, BLueprintReadOnly, Category = Affiliation)
-		FColor AffiliateColour2;
 
 	// Defined in blueprint.
 	UFUNCTION(BlueprintImplementableEvent)
@@ -70,6 +71,15 @@ public:
 	void Retreat();
 	void Attack();
 	void Search();
+
+
+protected:
+
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Affiliation)
+		FColor AffiliateColour1;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Affiliation)
+		FColor AffiliateColour2;
 
 
 private:
@@ -88,12 +98,17 @@ private:
 	// Search.
 	ABlock* MoveTowardsConcentrationOfHumans();
 	ABlock* MoveTowardsConcentrationOfAI();
+	ABlock* FindNearestAffiliation(const EAffiliation&);
 	TArray<ABlock*> CurrentPath;
 
 	void DealDamage();
 	bool HealthBelowZero();
 	void KillThisWarrior();
 
+	ABlock* MoveTowardsBlock(ABlock*);
 
 };
+
+int32 AWarrior::NumberOfAI = 0;
+int32 AWarrior::NumberOfHuman = 0;
 

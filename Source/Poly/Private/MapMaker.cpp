@@ -264,6 +264,9 @@ void UMapMaker::SpawnWarriors()
 		SpawnedWarrior2->AssignAffiliationColours();
 		AllWarriors.Add(SpawnedWarrior2);
 	}
+
+	AWarrior::NumberOfAI = NumberOfWarriors;
+	AWarrior::NumberOfHuman = NumberOfWarriors;
 }
 
 TArray<float> UMapMaker::GenerateFalloffMap()

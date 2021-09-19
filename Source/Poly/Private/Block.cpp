@@ -221,7 +221,7 @@ ABlock* ABlock::GetClosestBlockToAHuman(TArray<ABlock*> RangeOfHumans)
 
 	for (ABlock* Query : RangeOfHumans)
 	{
-		if (Query->IsNextToHuman())
+		if (Query->IsNextToAffiliation(EAffiliation::HUMAN))
 		{
 			return Query;
 		}
@@ -238,16 +238,20 @@ ABlock* ABlock::GetClosestBlockToAHuman(TArray<ABlock*> RangeOfHumans)
 }
 
 /// <summary>Is this block directly next to a Human?</summary>
-bool ABlock::IsNextToHuman()
+bool ABlock::IsNextToAffiliation(const EAffiliation& Neighbour)
 {
 	for (int i = 0; i < 8; ++i)
 	{
-		AWarrior* Warrior = Get(i)->Occupant;
-		if (Warrior)
+		ABlock* NeighbouringBlock = Get(i);
+		if (NeighbouringBlock)
 		{
-			if (Warrior->Affiliation == EAffiliation::HUMAN)
+			AWarrior* Warrior = NeighbouringBlock->Occupant;
+			if (Warrior)
 			{
-				return true;
+				if (Warrior->Affiliation == Neighbour)
+				{
+					return true;
+				}
 			}
 		}
 	}
