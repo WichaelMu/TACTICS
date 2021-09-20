@@ -294,8 +294,6 @@ void ABlock::AppendAttacks(EAffiliation DeductingAffiliation)
 
 	if (DeductingAffiliation == EAffiliation::HUMAN)
 	{
-		HumanAttacked++;
-
 		for (ABlock* Block : Depth)
 		{
 			Block->HumanAttacked++;
@@ -303,8 +301,6 @@ void ABlock::AppendAttacks(EAffiliation DeductingAffiliation)
 	}
 	else
 	{
-		AIAttacked--;
-
 		for (ABlock* Block : Depth)
 		{
 			Block->AIAttacked++;

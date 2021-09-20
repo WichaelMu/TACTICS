@@ -91,11 +91,11 @@ void AWarrior::MoveTo(ABlock* TargetBlock)
 		if (CurrentBlock != TargetBlock)
 		{	
 			SetActorLocation(TargetBlock->GetWarriorPosition());
+			DealDamage();
 		}
 	}
 
 	UpdateBlock(TargetBlock);
-	DealDamage();
 }
 
 // Update block information when moving between blocks.
@@ -123,7 +123,7 @@ void AWarrior::UpdateBlockAttacks(ABlock* From, ABlock* To)
 // Health some health.
 int AWarrior::Revive()
 {
-	int NewHealth = FMath::Max<int>(Health + 1, 20);
+	int NewHealth = FMath::Min<int>(Health + 1, 20);
 	Health = NewHealth;
 	return NewHealth;
 }
@@ -433,8 +433,6 @@ void AWarrior::DealDamage()
 	{
 		Warrior->DeductHealth();
 	}
-
-	Health -= SurroundingWarriors.Num() * .5f;
 }
 
 void AWarrior::MoveTowards()
