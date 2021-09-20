@@ -19,6 +19,9 @@ ABlock::ABlock()
 void ABlock::BeginPlay()
 {
 	Super::BeginPlay();
+
+
+	SetTraversableVisibility(false);
 }
 
 // Called using blueprint OnMouseClicked.
@@ -33,13 +36,11 @@ void ABlock::Selected(bool bSelected)
 	// When selected.
 	if (bSelected)
 	{
-		SetActorScale3D(FVector(.5f, .5f, .5f));
+		//SetActorScale3D(FVector(.5f, .5f, .5f));
 		AMouseController::Instance->Traversable = GetTraversableBlocks();
 	}
-	else // When deselected / not selected.
-	{
-		SetActorScale3D(FVector(1, 1, 1));
-	}
+
+	SetTraversableVisibility(bSelected);
 }
 
 // Identical to C#'s IComparable<ABlock> CompareTo(ABlock*) override; See /SOUTHLAND.
@@ -109,7 +110,7 @@ TArray<ABlock*> ABlock::GetTraversableBlocks()
 		{
 			if (Surround != this)
 			{
-				Surround->SetActorScale3D(FVector(.5f, .5f, .5f));
+				Surround->SetTraversableVisibility(true);
 			}
 		}
 	}

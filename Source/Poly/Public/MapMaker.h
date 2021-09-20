@@ -67,6 +67,10 @@ protected:
 
 
 	UPROPERTY(EditInstanceOnly, Category = Terrain)
+		TSubclassOf<ABlock> Sand;
+	UPROPERTY(EditInstanceOnly, Category = Terrain)
+		TSubclassOf<ABlock> Shallow;
+	UPROPERTY(EditInstanceOnly, Category = Terrain)
 		TSubclassOf<ABlock> Water;
 	UPROPERTY(EditInstanceOnly, Category = Terrain)
 		TSubclassOf<ABlock> Block;
@@ -76,9 +80,21 @@ protected:
 		TSubclassOf<ABlock> Stone;
 	UPROPERTY(EditInstanceOnly, Category = Terrain)
 		TSubclassOf<ABlock> Mountain;
-	UPROPERTY(EditInstanceOnly, Category = Terrain)
-		// Water | Grass | Stone | Mountain.
-		FVector4 TypeLimits;
+	
+	// Water | Grass | Stone | Mountain, etc. limits.
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Limits")
+		float WaterLimits;
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Limits")
+		float ShallowLimits;
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Limits")
+		float SandLimits;
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Limits")
+		float GrassLimits;
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Limits")
+		float StoneLimits;
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Limits")
+		float MountainLimits;
+
 	UPROPERTY(EditInstanceOnly, Category = Terrain)
 		float Roughness;
 

@@ -69,6 +69,8 @@ public:
 	FVector GetWarriorPosition() { return GetWorldPosition() + FVector(0, 0, 100); }
 	// Mark this block as selected?
 	void Selected(bool);
+	UFUNCTION(BlueprintImplementableEvent)
+		void SetTraversableVisibility(bool bShow);
 
 	//Pathfinding.
 	// F score.

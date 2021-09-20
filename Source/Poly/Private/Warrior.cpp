@@ -207,12 +207,16 @@ TArray<AWarrior*> AWarrior::GetAttackableWarriors()
 	{
 		for (int32 i = 0; i < 8; ++i)
 		{
-			AWarrior* SurroundingOccupant = CurrentBlock->Get(i)->Occupant;
-			if (SurroundingOccupant)
+			ABlock* Neighbour = CurrentBlock->Get(i);
+			if (Neighbour)
 			{
-				if (SurroundingOccupant->Affiliation != Affiliation)
+				AWarrior* SurroundingOccupant = Neighbour->Occupant;
+				if (SurroundingOccupant)
 				{
-					Attackable.Add(SurroundingOccupant);
+					if (SurroundingOccupant->Affiliation != Affiliation)
+					{
+						Attackable.Add(SurroundingOccupant);
+					}
 				}
 			}
 		}

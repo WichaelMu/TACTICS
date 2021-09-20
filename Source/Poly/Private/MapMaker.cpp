@@ -24,8 +24,15 @@ UMapMaker::UMapMaker()
 	CurveStrength = 3.f;
 
 	SplitLimit = .43f;
-	SplitDistance = .63f;
-	SplitRoughness = .04f;
+	SplitDistance = .15f;
+	SplitRoughness = .06f;
+
+	WaterLimits = .15f;
+	ShallowLimits = .2f;
+	SandLimits = .4f;
+	GrassLimits = .6f;
+	StoneLimits = .65f;
+	MountainLimits = 1.f;
 }
 
 
@@ -40,7 +47,7 @@ void UMapMaker::BeginPlay()
 	// If there is no block, it may be resetting the Block after compiling in UE4.
 	// This bug was observed early in the development of Poly, but has been solved
 	// without a definite conclusion. It may happen again. DO NOT REMOVE.
-	if (!Block || !Grass || !Stone || !Mountain)
+	if (!Block || !Grass || !Stone || !Mountain || !Water || !Shallow || !Sand)
 	{
 		UE_LOG(LogTemp, Error, TEXT("NO BLOCK"));
 		return;
@@ -164,23 +171,30 @@ void UMapMaker::PlaceBlocks()
 				Perlin -= FalloffMap[Position];
 			}
 
-			if (Perlin < TypeLimits.X)
+			if (Perlin < WaterLimits)
 			{
 				SpawnBlock(Water, x, y, EType::WATER);
-				continue;
 			}
-			else if (Perlin < TypeLimits.Y)
+			else if (Perlin < ShallowLimits)
+			{
+				SpawnBlock(Shallow, x, y, EType::WATER);
+			}
+			else if (Perlin < SandLimits)
+			{
+				SpawnBlock(Sand, x, y, EType::GRASS);
+			}
+			else if (Perlin < GrassLimits)
 			{
 				SpawnBlock(Grass, x, y, EType::GRASS);
-				continue;
 			}
-			else if (Perlin < TypeLimits.Z)
+			else if (Perlin < StoneLimits)
 			{
 				SpawnBlock(Stone, x, y, EType::STONE);
-				continue;
 			}
-
-			SpawnBlock(Mountain, x, y, EType::MOUNTAIN);
+			else
+			{
+				SpawnBlock(Mountain, x, y, EType::MOUNTAIN);
+			}
 		}
 	}
 }
@@ -197,6 +211,8 @@ ABlock* UMapMaker::SpawnBlock(UClass* Class, const int& X, const int& Y, EType T
 
 void UMapMaker::ConnectBlocks()
 {
+	if (NumberOfWarriors == 0) { return; }
+
 	// Connect neighbours.
 	for (int y = 0; y < YMap; ++y)
 	{
