@@ -49,6 +49,8 @@ private:
 	float MoveAmplifier;
 	void Throttle(float);
 
+	void Rise(float);
+
 	// Clamp the movement speed of the camera to this speed.
 	UPROPERTY(EditAnywhere)
 		float MinimumCameraMovementSpeed;

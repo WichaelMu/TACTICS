@@ -36,6 +36,8 @@ void AMouseController::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAxis("Right", this, &AMouseController::Right);
 
 	PlayerInputComponent->BindAxis("Scroll", this, &AMouseController::Throttle);
+
+	PlayerInputComponent->BindAxis("Rise", this, &AMouseController::Rise);
 }
 
 // Called un ABlock::OnBlockClicked.
@@ -110,6 +112,11 @@ void AMouseController::Throttle(float Throw)
 	{
 		MoveAmplifier = MinimumCameraMovementSpeed;
 	}
+}
+
+void AMouseController::Rise(float Throw)
+{
+	SetActorLocation(GetActorLocation() + GetActorUpVector() * Throw * MoveAmplifier * GetWorld()->GetDeltaSeconds());
 }
 
 
