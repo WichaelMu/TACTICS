@@ -48,7 +48,8 @@ public:
 	void UpdateBlockAttacks(ABlock*, ABlock*);
 
 
-	int Health;
+	UPROPERTY(VisibleAnywhere, Category = Health)
+		int Health;
 	int Revive();
 	// The damage this warrior will deal.
 	const float Damage = 2;

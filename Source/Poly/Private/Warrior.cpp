@@ -8,7 +8,6 @@
 #include "UObject/ConstructorHelpers.h"
 #include "MapMaker.h"
 #include "MW.h"
-#include "TimerManager.h"
 
 // Sets default values
 AWarrior::AWarrior()
@@ -90,28 +89,7 @@ void AWarrior::MoveTo(ABlock* TargetBlock)
 	if (CurrentBlock)
 	{
 		if (CurrentBlock != TargetBlock)
-		{
-			//FTimerManager TimerManager;
-			//FTimerHandle TimerHandle;
-
-			//TArray<ABlock*> Path = UMW::Pathfind(CurrentBlock, TargetBlock);
-			
-			//for (int i = Path.Num() - 1; i >= 0; --i)
-			//{
-			//	/*FVector WarriorLocation = GetActorLocation();
-			//	FVector PathLocation = Path[i]->GetWarriorPosition();
-			//	DirectionToPath = (PathLocation - WarriorLocation).GetSafeNormal();*/
-			//	
-			//	if (i > 0)
-			//	{
-			//		//DrawDebugLine(GetWorld(), Path[i]->GetWarriorPosition(), Path[i - 1]->GetWarriorPosition(), FColor::White, true, 10, 0U, 10);
-			//	}
-			//}
-
-			//SetActorLocation(Path[0]->GetWarriorPosition());
-
-			//Path.Empty();
-			
+		{	
 			SetActorLocation(TargetBlock->GetWarriorPosition());
 		}
 	}
@@ -145,7 +123,7 @@ void AWarrior::UpdateBlockAttacks(ABlock* From, ABlock* To)
 // Health some health.
 int AWarrior::Revive()
 {
-	int NewHealth = FMath::Max<int>(Health + 3, 20);
+	int NewHealth = FMath::Max<int>(Health + 1, 20);
 	Health = NewHealth;
 	return NewHealth;
 }
@@ -260,6 +238,13 @@ void AWarrior::Search()
 
 ABlock* AWarrior::FindSafestBlock()
 {
+	TArray<AWarrior*> NearbyEnemies = CurrentBlock->SurroundingEnemiesInRange(Affiliation);
+
+	if (NearbyEnemies.Num() == 0 && Health <= 4) {
+		Revive();
+		return CurrentBlock;
+	}
+
 	TArray<ABlock*> Traversable = CurrentBlock->GetTraversableBlocks();
 
 	ABlock* MaximumAI = CurrentBlock;

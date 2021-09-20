@@ -174,12 +174,15 @@ void UMW::DetermineMoves()
 		//TArray<ABlock*> Traversable = CurrentBlock->GetTraversableBlocks();
 
 
-		/*if (Evaluating->Health <= 4)
+		if (Evaluating->Health <= 4)
 		{
 			Evaluating->Retreat();
-		}*/
+		}
+		else
+		{
+			Evaluating->Attack();
+		}
 
-		Evaluating->Attack();
 
 		//Moves.Add(TPair<AWarrior*, ABlock*>(Evaluating, Traversable.Last()));
 	}
