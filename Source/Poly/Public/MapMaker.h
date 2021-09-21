@@ -65,6 +65,21 @@ protected:
 	UPROPERTY(EditInstanceOnly, Category = "Terrain|Continents", meta = (UIMin = "0", UIMax = "0.1", ClampMin = "0", ClampMax = "0.1"))
 		float SplitRoughness;
 
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
+		bool bComputeEquatorialEnvironment;
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
+		int EquatorInfluence;
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
+		float EquatorBias;
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
+		float EquatorStrength;
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
+		float EquatorSpread;
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
+		float EquatorRoughness;
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
+		TSubclassOf<ABlock> Desert;
+
 
 	UPROPERTY(EditInstanceOnly, Category = Terrain)
 		TSubclassOf<ABlock> Sand;
@@ -118,6 +133,8 @@ private:
 
 	//	If X and Y are in the ranges of Map.
 	bool IsIndexInMapRange(const uint16& X, const uint16& Y, const uint16& Index) const;
+
+	TArray<int> ComputeEquator();
 };
 
 UMapMaker* UMapMaker::Instance = nullptr;

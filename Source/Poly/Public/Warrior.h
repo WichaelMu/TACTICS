@@ -103,7 +103,7 @@ private:
 	TArray<ABlock*> CurrentPath;
 
 	void DealDamage();
-	bool HealthBelowZero();
+	bool HealthIsFatal();
 	void KillThisWarrior();
 
 	ABlock* MoveTowardsBlock(ABlock*);

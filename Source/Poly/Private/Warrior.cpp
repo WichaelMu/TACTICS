@@ -120,7 +120,7 @@ void AWarrior::UpdateBlockAttacks(ABlock* From, ABlock* To)
 	To->AppendAttacks(Affiliation);
 }
 
-// Health some health.
+// Revive some health.
 int AWarrior::Revive()
 {
 	int NewHealth = FMath::Min<int>(Health + 1, 20);
@@ -129,7 +129,7 @@ int AWarrior::Revive()
 }
 
 // Has the health fallen below zero?
-bool AWarrior::HealthBelowZero()
+bool AWarrior::HealthIsFatal()
 {
 	return Health <= 0;
 }
@@ -192,7 +192,7 @@ void AWarrior::DeductHealth()
 {
 	Health -= Damage;
 
-	if (HealthBelowZero())
+	if (HealthIsFatal())
 	{
 		KillThisWarrior();
 	}

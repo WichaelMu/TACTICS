@@ -33,6 +33,11 @@ UMapMaker::UMapMaker()
 	GrassLimits = .6f;
 	StoneLimits = .65f;
 	MountainLimits = 1.f;
+
+	EquatorBias = 10.f;
+	EquatorStrength = 15.f;
+	EquatorSpread = .45f;
+	EquatorRoughness = .15f;
 }
 
 
@@ -47,7 +52,7 @@ void UMapMaker::BeginPlay()
 	// If there is no block, it may be resetting the Block after compiling in UE4.
 	// This bug was observed early in the development of Poly, but has been solved
 	// without a definite conclusion. It may happen again. DO NOT REMOVE.
-	if (!Block || !Grass || !Stone || !Mountain || !Water || !Shallow || !Sand)
+	if (!Block || !Grass || !Stone || !Mountain || !Water || !Shallow || !Sand || !Desert)
 	{
 		UE_LOG(LogTemp, Error, TEXT("NO BLOCK"));
 		return;
@@ -56,7 +61,6 @@ void UMapMaker::BeginPlay()
 	PlaceBlocks();
 	ConnectBlocks();
 	SpawnWarriors();
-
 }
 
 void UMapMaker::GenerateLargestConcentrationOfHumans()
@@ -127,10 +131,7 @@ ABlock* UMapMaker::RandomBlock()
 
 int UMapMaker::MapMidPoint()
 {
-	int IX = Instance->XMap / 2;
-	int IY = Instance->YMap / 2;
-
-	return IY * Instance->XMap + IX;
+	return (Instance->XMap + 1) * (Instance->XMap / 2);
 }
 
 void UMapMaker::PlaceBlocks()
@@ -147,6 +148,12 @@ void UMapMaker::PlaceBlocks()
 	if (bGenerateContinents)
 	{
 		Continents = GenerateContinents();
+	}
+
+	TArray<int> Equator;
+	if (bComputeEquatorialEnvironment)
+	{
+		Equator = ComputeEquator();
 	}
 
 	// Spawn blocks.
@@ -178,6 +185,10 @@ void UMapMaker::PlaceBlocks()
 			else if (Perlin < ShallowLimits)
 			{
 				SpawnBlock(Shallow, x, y, EType::WATER);
+			}
+			else if (bComputeEquatorialEnvironment && Perlin < GrassLimits && Equator.Contains(Position))
+			{
+				SpawnBlock(Desert, x, y, EType::GRASS);
 			}
 			else if (Perlin < SandLimits)
 			{
@@ -211,7 +222,7 @@ ABlock* UMapMaker::SpawnBlock(UClass* Class, const int& X, const int& Y, EType T
 
 void UMapMaker::ConnectBlocks()
 {
-	if (NumberOfWarriors == 0) { return; }
+	//if (NumberOfWarriors == 0) { return; }
 
 	// Connect neighbours.
 	for (int y = 0; y < YMap; ++y)
@@ -219,11 +230,6 @@ void UMapMaker::ConnectBlocks()
 		for (int x = 0; x < XMap; ++x)
 		{
 			uint16 Index = y * XMap + x;
-
-			if (Map[Index]->Type == EType::MOUNTAIN || Map[Index]->Type == EType::WATER)
-			{
-				continue;
-			}
 
 			//	North
 			if (IsIndexInMapRange(x	   , y + 1, Index)) { Map[Index]->North		= Map[ Index       + YMap];	}
@@ -308,7 +314,7 @@ TArray<float> UMapMaker::GenerateFalloffMap()
 	return FalloffValues;
 }
 
-// (v ^ a) / ( (b - bv) ^ a).
+// (v ^ a) / (v ^ a + (b - bv) ^ a).
 float UMapMaker::Smooth(const float& v, const float& a, const float& b)
 {
 	float Numerator = FMath::Pow(v, a);
@@ -351,7 +357,7 @@ bool UMapMaker::IsIndexInMapRange(const uint16& X, const uint16& Y, const uint16
 	int Position = Y * XMap + X;
 
 	// If the Position is within Map.
-	if (!Map.IsValidIndex(Position))
+	if (!((XMap * YMap) > Position))
 	{
 		return false;
 	}
@@ -364,5 +370,130 @@ bool UMapMaker::IsIndexInMapRange(const uint16& X, const uint16& Y, const uint16
 	}
 
 	return true;
+}
+
+TArray<int> UMapMaker::ComputeEquator()
+{
+	TArray<int> Equator;
+	Equator.Init(0, XMap * YMap);
+
+	int NullIsland = MapMidPoint();
+	Equator.Add(NullIsland);
+
+	int MX = XMap / 2;
+	int MY = YMap / 2;
+
+	TArray<FVector2D> PrimeMeridian;
+	PrimeMeridian.Add(FVector2D(MX, MY));
+
+	float Offset = FMath::RandRange(-10000.f, 10000.f);
+	
+	for (int i = 0; i < EquatorInfluence; ++i)
+	{
+		int RelativeX = MX + i + 1;
+		int RelativeY = MY + i + 1;
+		int RelativeMid = RelativeY * XMap + RelativeX;
+
+		if (IsIndexInMapRange(RelativeX, RelativeY, RelativeMid))
+		{
+			int NorthWest = RelativeY * XMap + RelativeX;
+			PrimeMeridian.Add(FVector2D(RelativeX, RelativeY));
+			Equator.Add(NorthWest);
+		}
+
+		RelativeX = MX + i;
+		RelativeY = MY + i + 1;
+		RelativeMid = RelativeY * XMap + RelativeX;
+
+		if (IsIndexInMapRange(RelativeX, RelativeY, RelativeMid))
+		{
+			int North = RelativeY * XMap + RelativeX;
+			PrimeMeridian.Add(FVector2D(RelativeX, RelativeY));
+			Equator.Add(North);
+		}
+	}
+
+	for (int i = 0; i < EquatorInfluence; ++i)
+	{
+		int RelativeX = MX - i - 1;
+		int RelativeY = MY - i - 1;
+		int RelativeMid = RelativeY * XMap + RelativeX;
+
+		if (IsIndexInMapRange(RelativeX, RelativeY, RelativeMid))
+		{
+			int SouthEast = RelativeY * XMap + RelativeX;
+			PrimeMeridian.Add(FVector2D(RelativeX, RelativeY));
+			Equator.Add(SouthEast);
+		}
+
+		RelativeX = MX - i;
+		RelativeY = MY - i - 1;
+		RelativeMid = RelativeY * XMap + RelativeX;
+
+		if (IsIndexInMapRange(RelativeX, RelativeY, RelativeMid))
+		{
+			int South = RelativeY * XMap + RelativeX;
+			PrimeMeridian.Add(FVector2D(RelativeX, RelativeY));
+			Equator.Add(South);
+		}
+	}
+
+	for (FVector2D NESW : PrimeMeridian)
+	{
+		int X = NESW.X - 1;
+		int Y = NESW.Y + 1;
+		int R = Y * XMap + X;
+
+		FVector2D NE = FVector2D(X, Y);
+
+		while (IsIndexInMapRange(NE.X, NE.Y, R))
+		{
+			int Position = NE.Y * XMap + NE.X;
+			if (NE.X != 0 && NE.Y != 0)
+			{
+				float Perlin = FMath::PerlinNoise2D(FVector2D(NE.X + Offset, NE.Y + Offset) * EquatorRoughness);
+				Perlin = (Perlin + 1) / 2;
+
+				if (Perlin - Smooth(Perlin, EquatorStrength, EquatorBias) < EquatorSpread)
+				{
+					if (!Equator.Contains(Position))
+					{
+						Equator.Add(Position);
+					}
+				}
+			}
+
+			NE = FVector2D(NE.X - 1, NE.Y + 1);
+			R = Position;
+		}
+		
+		X = NESW.X + 1;
+		Y = NESW.Y - 1;
+		R = Y * XMap + X;
+
+		FVector2D SW = FVector2D(X, Y);
+		while (IsIndexInMapRange(SW.X, SW.Y, R))
+		{
+			int Position = SW.Y * XMap + SW.X;
+			if (SW.X != 0 && SW.Y != 0)
+			{
+				float Perlin = FMath::PerlinNoise2D(FVector2D(SW.X + Offset, SW.Y + Offset) * EquatorRoughness);
+				Perlin = (Perlin + 1) / 2;
+
+				if (Perlin - Smooth(Perlin, EquatorStrength, EquatorBias) < EquatorSpread)
+				{
+					if (!Equator.Contains(Position))
+					{
+						Equator.Add(Position);
+					}
+				}
+			}
+
+			SW = FVector2D(SW.X + 1, SW.Y - 1);
+			R = Position;
+		}
+	}
+
+	return Equator;
 }
 
