@@ -347,20 +347,22 @@ ABlock* AWarrior::FindKillableHuman()
 		// If the difference in warriors is 2 either way:
 		if (Evaluation < 2 && Evaluation > -2)
 		{
-			// If still quite healthy, alight to target Humans.
+			// If still quite healthy, align to target Humans.
 			if (Health > 16)
 			{
 				ABlock* NearestHuman = FindNearestAffiliation(EAffiliation::HUMAN);
 
+				// If the block-distance to NearestHuman is greater than 10. Flank that position.
 				if (UMW::Pathfind(CurrentBlock, NearestHuman).Num() > 10)
 				{
 					MoveTowardsBlock(Flank(NearestHuman));
 				}
 
+				// Go towards NearestHuman.
 				return MoveTowardsBlock(NearestHuman);
 			}
 
-			// Otherwise, cohesion with AI.
+			// Otherwise, cohesion with group of AI.
 			return MoveTowardsBlock(ConcentrationOfAI());
 		}
 		
@@ -372,7 +374,7 @@ ABlock* AWarrior::FindKillableHuman()
 		}
 		else
 		{
-			// Cohesion with AI.
+			// Cohesion with closest AI.
 			return MoveTowardsBlock(FindNearestAffiliation(EAffiliation::AI));
 		}
 	}
@@ -445,6 +447,7 @@ ABlock* AWarrior::ConcentrationOfAI()
 	return AIHeatmap;
 }
 
+// Conducts a BFS to search for Nearest.
 ABlock* AWarrior::FindNearestAffiliation(const EAffiliation& Nearest)
 {
 	// AI has already won. Do not continue.
