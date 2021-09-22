@@ -449,17 +449,15 @@ TArray<int> UMapMaker::ComputeEquator()
 		while (IsIndexInMapRange(NE.X, NE.Y, R))
 		{
 			int Position = NE.Y * XMap + NE.X;
-			if (NE.X != 0 && NE.Y != 0)
-			{
-				float Perlin = FMath::PerlinNoise2D(FVector2D(NE.X + Offset, NE.Y + Offset) * EquatorRoughness);
-				Perlin = (Perlin + 1) / 2;
 
-				if (Perlin - Smooth(Perlin, EquatorStrength, EquatorBias) < EquatorSpread)
+			float Perlin = FMath::PerlinNoise2D(FVector2D(NE.X + Offset, NE.Y + Offset) * EquatorRoughness);
+			Perlin = (Perlin + 1) / 2;
+
+			if (Perlin - Smooth(Perlin, EquatorStrength, EquatorBias) < EquatorSpread)
+			{
+				if (!Equator.Contains(Position))
 				{
-					if (!Equator.Contains(Position))
-					{
-						Equator.Add(Position);
-					}
+					Equator.Add(Position);
 				}
 			}
 
@@ -475,17 +473,15 @@ TArray<int> UMapMaker::ComputeEquator()
 		while (IsIndexInMapRange(SW.X, SW.Y, R))
 		{
 			int Position = SW.Y * XMap + SW.X;
-			if (SW.X != 0 && SW.Y != 0)
-			{
-				float Perlin = FMath::PerlinNoise2D(FVector2D(SW.X + Offset, SW.Y + Offset) * EquatorRoughness);
-				Perlin = (Perlin + 1) / 2;
 
-				if (Perlin - Smooth(Perlin, EquatorStrength, EquatorBias) < EquatorSpread)
+			float Perlin = FMath::PerlinNoise2D(FVector2D(SW.X + Offset, SW.Y + Offset) * EquatorRoughness);
+			Perlin = (Perlin + 1) / 2;
+
+			if (Perlin - Smooth(Perlin, EquatorStrength, EquatorBias) < EquatorSpread)
+			{
+				if (!Equator.Contains(Position))
 				{
-					if (!Equator.Contains(Position))
-					{
-						Equator.Add(Position);
-					}
+					Equator.Add(Position);
 				}
 			}
 
