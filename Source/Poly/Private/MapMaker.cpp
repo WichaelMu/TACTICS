@@ -82,7 +82,7 @@ void UMapMaker::GenerateLargestConcentrationOfHumans()
 	for (int i = 0; i < CopyOfMap.Num(); ++i)
 	{
 		// Limit the search if the largest concetration of Humans is greater than half the map, or if it is greater than half of the initial population of spawned warriors.
-		bool bAIMax = LargestHuman >= Instance->Map.Num() / 2 - 1 || LargestHuman >= Instance->NumberOfWarriors / 2 - 1;
+		bool bAIMax = LargestHuman >= Instance->Map.Num() / 2 - 1;
 
 		if (bAIMax)
 		{
@@ -123,7 +123,7 @@ void UMapMaker::GenerateLargestConcentrationOfAI()
 	for (int i = 0; i < CopyOfMap.Num(); ++i)
 	{
 		// Limit the search if the largest concetration of AI is greater than half the map, or if it is greater than half of the initial population of spawned warriors.
-		bool bAIMax = LargestAI >= Instance->NumberOfWarriors / 2 - 1 || LargestAI >= Instance->NumberOfWarriors / 2 - 1;
+		bool bAIMax = LargestAI >= Instance->NumberOfWarriors / 2 - 1;
 
 		if (bAIMax)
 		{
@@ -426,6 +426,11 @@ bool UMapMaker::IsIndexInMapRange(const uint16& X, const uint16& Y, const uint16
 	{
 		// You can't go beyond the XMap or YMap.
 		return !(X + 1 > XMap || Y + 1 > YMap);
+	}
+
+	if (Map.Num() != 0)
+	{
+		return (Map[Position]->Type != EType::MOUNTAIN && Map[Position]->Type != EType::WATER);
 	}
 
 	return true;
