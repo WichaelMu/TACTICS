@@ -96,11 +96,11 @@ private:
 
 	// Attack.
 	ABlock* FindKillableHuman();
-	ABlock* Flank();
+	ABlock* Flank(ABlock*);
 
 	// Search.
-	ABlock* MoveTowardsConcentrationOfHumans();
-	ABlock* MoveTowardsConcentrationOfAI();
+	ABlock* ConcentrationOfHumans();
+	ABlock* ConcentrationOfAI();
 	ABlock* FindNearestAffiliation(const EAffiliation&);
 	TArray<ABlock*> CurrentPath;
 

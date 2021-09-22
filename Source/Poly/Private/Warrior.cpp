@@ -257,7 +257,7 @@ void AWarrior::Attack()
 
 void AWarrior::Search()
 {
-	MoveTo(MoveTowardsConcentrationOfHumans());
+	MoveTo(ConcentrationOfHumans());
 }
 
 ABlock* AWarrior::FindSafestBlock()
@@ -305,7 +305,7 @@ ABlock* AWarrior::FindKillableHuman()
 	if (NumberOfHuman == 0)
 	{
 		UMW::Log("AI HAS WON.");
-		return MoveTowardsConcentrationOfHumans(); // Will default to centre.
+		return MoveTowardsBlock(ConcentrationOfHumans()); // Will default to centre.
 	}
 
 	// If this block is overwhelmed by humans, run away || stay out of range.
@@ -316,7 +316,7 @@ ABlock* AWarrior::FindKillableHuman()
 
 	TArray<ABlock*> Traversable = CurrentBlock->GetTraversableBlocks();
 
-	TArray<ABlock*> DesirableBlocks;
+	uint32 DesirableBlocks = 0;
 
 	for (ABlock* Block : Traversable)
 	{
@@ -332,13 +332,13 @@ ABlock* AWarrior::FindKillableHuman()
 					return Block;
 				}
 
-				DesirableBlocks.Add(Block);
+				DesirableBlocks++;
 			}
 		}
 	}
 
 	// If you can find a HumanAttacked > 0, but it is NOT less than AIAttacked, wait for reinforcements and stay out of range.
-	if (DesirableBlocks.Num() == 0)
+	if (DesirableBlocks == 0)
 	{
 		// Choose whether to band with other AIs, or go towards humans.
 
@@ -348,20 +348,27 @@ ABlock* AWarrior::FindKillableHuman()
 		if (Evaluation < 2 && Evaluation > -2)
 		{
 			// If still quite healthy, alight to target Humans.
-			if (Health > 14)
+			if (Health > 16)
 			{
-				return MoveTowardsConcentrationOfHumans();
+				ABlock* NearestHuman = FindNearestAffiliation(EAffiliation::HUMAN);
+
+				if (UMW::Pathfind(CurrentBlock, NearestHuman).Num() > 10)
+				{
+					MoveTowardsBlock(Flank(NearestHuman));
+				}
+
+				return MoveTowardsBlock(NearestHuman);
 			}
 
 			// Otherwise, cohesion with AI.
-			return MoveTowardsConcentrationOfAI();
+			return MoveTowardsBlock(ConcentrationOfAI());
 		}
 		
-		// If AI has 3 more warriors than Human:
-		if (Evaluation >= 3)
+		// If AI has 2 more warriors than Human:
+		if (Evaluation >= 2)
 		{
 			// Align to nearest Human by prediction.
-			return Flank();
+			return MoveTowardsBlock(Flank(FindNearestAffiliation(EAffiliation::HUMAN)));
 		}
 		else
 		{
@@ -377,29 +384,28 @@ ABlock* AWarrior::FindKillableHuman()
 	return BestMove;
 }
 
-ABlock* AWarrior::Flank()
+// Flanks position.
+ABlock* AWarrior::Flank(ABlock* Position)
 {
-	ABlock* NearestHuman = FindNearestAffiliation(EAffiliation::HUMAN);
-
-	if (NearestHuman == CurrentBlock)
+	if (Position == CurrentBlock)
 	{
 		// Couldn't find the closest Human, nothing we can do. Return the same block.
 		// This should only ever happen if AI has won, in which case, this won't be called.
-		return MoveTowardsBlock(NearestHuman);
+		return Position;
 	}
 
-	TArray<ABlock*> FlankRoute = ABlock::ComputeTrajectory(NearestHuman, UMapMaker::Instance->XMap / 2);
+	TArray<ABlock*> FlankRoute = ABlock::ComputeTrajectory(Position, UMapMaker::Instance->XMap / 2);
 
 	// The depth or terrain limited length of the trajectory.
 	int32 FlankRouteLength = FlankRoute.Num();
 
 	// The block-distance between the current AI and the nearest Human.
-	int32 DistanceToTarget = UMW::Pathfind(CurrentBlock, NearestHuman).Num();
+	int32 DistanceToTarget = UMW::Pathfind(CurrentBlock, Position).Num();
 
 	if (DistanceToTarget > FlankRouteLength)
 	{
 		// The target is too far, go towards the end of the trajectory.
-		return MoveTowardsBlock(FlankRoute.Last());
+		return FlankRoute.Last();
 	}
 
 	// Half distance is the midpoint for reaching the predicted trajectory.
@@ -408,14 +414,14 @@ ABlock* AWarrior::Flank()
 	if (FlankRoute.IsValidIndex(HalfDistance))
 	{
 		// Close in on half distance.
-		return MoveTowardsBlock(FlankRoute[HalfDistance]);
+		return FlankRoute[HalfDistance];
 	}
 
 	// Default. Return the last element in the trajectory.
-	return MoveTowardsBlock(FlankRoute.Last());
+	return FlankRoute.Last();
 }
 
-ABlock* AWarrior::MoveTowardsConcentrationOfHumans()
+ABlock* AWarrior::ConcentrationOfHumans()
 {
 	if (!UMapMaker::HumanConcentration)
 	{
@@ -424,10 +430,10 @@ ABlock* AWarrior::MoveTowardsConcentrationOfHumans()
 
 	ABlock* HumanHeatmap = UMapMaker::HumanConcentration;
 
-	return MoveTowardsBlock(HumanHeatmap);
+	return HumanHeatmap;
 }
 
-ABlock* AWarrior::MoveTowardsConcentrationOfAI()
+ABlock* AWarrior::ConcentrationOfAI()
 {
 	if (!UMapMaker::AIConcentration)
 	{
@@ -436,7 +442,7 @@ ABlock* AWarrior::MoveTowardsConcentrationOfAI()
 
 	ABlock* AIHeatmap = UMapMaker::AIConcentration;
 
-	return MoveTowardsBlock(AIHeatmap);
+	return AIHeatmap;
 }
 
 ABlock* AWarrior::FindNearestAffiliation(const EAffiliation& Nearest)
@@ -474,11 +480,8 @@ ABlock* AWarrior::FindNearestAffiliation(const EAffiliation& Nearest)
 				// The Nearest warrior has been found, exit.
 				if (QueryBlock->IsNextToAffiliation(Nearest))
 				{
-					NextToAffiliation = QueryBlock;
-					
-					// Exit both loops.
-					Breadth.Empty();
-					break;
+					// The block that is next to or in striking range of Nearest.
+					return QueryBlock;
 				}
 
 				// Do not waste time queueing something that has been visited.
@@ -491,8 +494,9 @@ ABlock* AWarrior::FindNearestAffiliation(const EAffiliation& Nearest)
 		}
 	}
 
-	// The block that is next to or in striking range of Nearest.
-	return NextToAffiliation;
+	// This is executed when BFS can't find a reachable Human.
+	// Go towards the largest concentration of Nearest instead. (At least try to get to the enemy).
+	return Nearest == EAffiliation::HUMAN ? ConcentrationOfHumans() : ConcentrationOfAI();
 }
 
 void AWarrior::DealDamage()
