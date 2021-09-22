@@ -29,6 +29,10 @@ protected:
 
 public:
 
+
+	static TArray<ABlock*> ComputeTrajectory(ABlock*, uint8);
+
+
 	UPROPERTY(VisibleAnywhere)
 		int Index = -1;
 
@@ -104,6 +108,9 @@ private:
 
 	void SearchDepthInitialise(TArray<ABlock*>&, uint8, const bool& bIgnoreOccupants = true);
 	void SearchDepthLogic(TArray<ABlock*>& Blocks, uint8 Depth, TSet<ABlock*>& Visited, TQueue<ABlock*>& Breadth, const bool&);
+
+
+	TArray<ABlock*> GetNeighbours() const;
 
 
 };

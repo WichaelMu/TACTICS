@@ -60,6 +60,7 @@ public:
 	// The block this warrior is standing on.
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 		ABlock* CurrentBlock;
+	ABlock* PreviousBlock;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Affiliation)
 		EAffiliation Affiliation;
@@ -95,6 +96,7 @@ private:
 
 	// Attack.
 	ABlock* FindKillableHuman();
+	ABlock* Flank();
 
 	// Search.
 	ABlock* MoveTowardsConcentrationOfHumans();

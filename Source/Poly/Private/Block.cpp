@@ -3,6 +3,7 @@
 
 #include "Block.h"
 #include "MouseController.h"
+#include "MW.h"
 
 // Sets default values
 ABlock::ABlock()
@@ -22,6 +23,66 @@ void ABlock::BeginPlay()
 
 
 	SetTraversableVisibility(false);
+}
+
+TArray<ABlock*> ABlock::ComputeTrajectory(ABlock* NearestHeuristic, uint8 Depth)
+{
+	ABlock* From = NearestHeuristic;
+	ABlock* To = NearestHeuristic;
+
+	TArray<ABlock*> NeighbouringWarrior = NearestHeuristic->GetNeighbours();
+	for (ABlock* Query : NeighbouringWarrior)
+	{
+		AWarrior* Warrior = Query->Occupant;
+		if (Warrior)
+		{
+			if (Warrior->Affiliation == EAffiliation::HUMAN)
+			{
+				From = Warrior->PreviousBlock;
+				To = Warrior->CurrentBlock;
+				
+				break;
+			}
+		}
+	}
+
+	TArray<ABlock*> PossibleTrajectory;
+	
+	int MinDistance = INT_MAX;
+	uint8 Orientation = 0;
+
+	for (uint8 i = 0; i < 8; ++i)
+	{
+		ABlock* Neighbour = From->Get(i);
+		if (Neighbour)
+		{
+			float Distance = FVector::DistSquared(Neighbour->GetWarriorPosition(), To->GetWarriorPosition());
+
+			if (Distance < MinDistance)
+			{
+				MinDistance = Distance;
+				Orientation = i;
+			}
+		}
+	}
+
+	ABlock* Trajectory = From;
+
+	while (Depth--)
+	{
+		ABlock* Prediction = Trajectory->Get(Orientation);
+		if (Prediction)
+		{
+			PossibleTrajectory.Add(Prediction);
+			Trajectory = Prediction;
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	return PossibleTrajectory;
 }
 
 // Called using blueprint OnMouseClicked.
@@ -188,6 +249,17 @@ void ABlock::SearchDepthLogic(TArray<ABlock*>& Blocks, uint8 Depth, TSet<ABlock*
 	}
 
 	SearchDepthLogic(Blocks, Depth - 1, Visited, TempQueue, bIgnoreOccupants);
+}
+
+TArray<ABlock*> ABlock::GetNeighbours() const
+{
+	TArray<ABlock*> Neighbours;
+
+	for (int i = 0; i < 8; ++i)
+		if (Get(i))
+			Neighbours.Add(Get(i));
+
+	return Neighbours;
 }
 
 /// <summary>Gets any warrior that is in-range of this block.</summary>

@@ -7,6 +7,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "UObject/ConstructorHelpers.h"
 #include "MapMaker.h"
+#include "DrawDebugHelpers.h"
 #include "MW.h"
 
 // Sets default values
@@ -70,6 +71,7 @@ void AWarrior::OnSpawn(ABlock* SpawnedBlock, EAffiliation TeamAffiliation)
 	this->Affiliation = TeamAffiliation;
 	if (SpawnedBlock)
 	{
+		PreviousBlock = SpawnedBlock;
 		CurrentBlock = SpawnedBlock;
 
 		// Change the location of this warrior.
@@ -101,6 +103,8 @@ void AWarrior::MoveTo(ABlock* TargetBlock)
 // Update block information when moving between blocks.
 void AWarrior::UpdateBlock(ABlock* NewBlock)
 {
+	PreviousBlock = CurrentBlock;
+
 	CurrentBlock->Occupant = nullptr;
 
 	UpdateBlockAttacks(CurrentBlock, NewBlock);
@@ -160,6 +164,12 @@ void AWarrior::KillThisWarrior()
 ABlock* AWarrior::MoveTowardsBlock(ABlock* Relative)
 {
 	CurrentPath = UMW::Pathfind(CurrentBlock, Relative);
+
+	for (int i = 0; i < CurrentPath.Num() - 1; ++i)
+	{
+		DrawDebugLine(GetWorld(), CurrentPath[i]->GetWarriorPosition(), CurrentPath[i + 1]->GetWarriorPosition(), FColor::Blue, true, 10, 0, 10);
+	}
+
 	if (CurrentPath.Num() > 1)
 	{
 		return CurrentPath.Last(1);
@@ -336,13 +346,13 @@ ABlock* AWarrior::FindKillableHuman()
 		// If AI has 3 more warriors than Human:
 		if (Evaluation >= 3)
 		{
-			// Align to nearest Human.
-			return FindNearestAffiliation(EAffiliation::HUMAN);
+			// Align to nearest Human by prediction.
+			return Flank();
 		}
 		else
 		{
 			// Cohesion with AI.
-			return FindNearestAffiliation(EAffiliation::AI);
+			return MoveTowardsBlock(FindNearestAffiliation(EAffiliation::AI));
 		}
 	}
 
@@ -351,6 +361,44 @@ ABlock* AWarrior::FindKillableHuman()
 	// Find a block that minimises the distance to an enemy.
 	ABlock* BestMove = CurrentBlock->GetClosestBlockToAHuman(DesirableBlocks);
 	return BestMove;
+}
+
+ABlock* AWarrior::Flank()
+{
+	ABlock* NearestHuman = FindNearestAffiliation(EAffiliation::HUMAN);
+
+	if (NearestHuman == CurrentBlock)
+	{
+		// Couldn't find the closest Human, nothing we can do. Return the same block.
+		// This should only ever happen if AI has won, in which case, this won't be called.
+		return MoveTowardsBlock(NearestHuman);
+	}
+
+	TArray<ABlock*> FlankRoute = ABlock::ComputeTrajectory(NearestHuman, UMapMaker::Instance->XMap / 2);
+
+	// The depth or terrain limited length of the trajectory.
+	int32 FlankRouteLength = FlankRoute.Num();
+
+	// The block-distance between the current AI and the nearest Human.
+	int32 DistanceToTarget = UMW::Pathfind(CurrentBlock, NearestHuman).Num();
+
+	if (DistanceToTarget > FlankRouteLength)
+	{
+		// The target is too far, go towards the end of the trajectory.
+		return MoveTowardsBlock(FlankRoute.Last());
+	}
+
+	// Half distance is the midpoint for reaching the predicted trajectory.
+	int32 HalfDistance = DistanceToTarget / 2;
+
+	if (FlankRoute.IsValidIndex(HalfDistance))
+	{
+		// Close in on half distance.
+		return MoveTowardsBlock(FlankRoute[HalfDistance]);
+	}
+
+	// Default. Return the last element in the trajectory.
+	return MoveTowardsBlock(FlankRoute.Last());
 }
 
 ABlock* AWarrior::MoveTowardsConcentrationOfHumans()
@@ -385,7 +433,7 @@ ABlock* AWarrior::FindNearestAffiliation(const EAffiliation& Nearest)
 		return CurrentBlock;
 	}
 
-	if (NumberOfAI <= 1) {
+	if (NumberOfAI <= 0) {
 		UMW::Log("NUMBER OF AI IS ZERO");
 		return CurrentBlock;
 	}
@@ -409,6 +457,8 @@ ABlock* AWarrior::FindNearestAffiliation(const EAffiliation& Nearest)
 				if (QueryBlock->IsNextToAffiliation(Nearest))
 				{
 					NextToAffiliation = QueryBlock;
+					
+					// Exit both loops.
 					Breadth.Empty();
 					break;
 				}
@@ -422,7 +472,7 @@ ABlock* AWarrior::FindNearestAffiliation(const EAffiliation& Nearest)
 		}
 	}
 
-	return MoveTowardsBlock(NextToAffiliation);
+	return NextToAffiliation;
 }
 
 void AWarrior::DealDamage()
