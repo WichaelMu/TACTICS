@@ -103,6 +103,13 @@ TArray<ABlock*> UMW::Pathfind(ABlock* Origin, ABlock* Destination)
 
 		if (Current == Destination)
 		{
+			ABlock* Traverse = Destination;
+			while (Traverse != Origin)
+			{
+				Path.Add(Traverse);
+				Traverse = Traverse->Parent;
+			}
+			
 			return Path;
 		}
 
@@ -129,7 +136,7 @@ TArray<ABlock*> UMW::Pathfind(ABlock* Origin, ABlock* Destination)
 			}
 		}
 	}
-
+	
 	return Path;
 }
 
