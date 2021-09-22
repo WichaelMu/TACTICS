@@ -32,11 +32,15 @@ void AMouseController::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+	
+	// WASD.
 	PlayerInputComponent->BindAxis("Forward", this, &AMouseController::Forward);
 	PlayerInputComponent->BindAxis("Right", this, &AMouseController::Right);
 
+	// Scroll for camera movement speed.
 	PlayerInputComponent->BindAxis("Scroll", this, &AMouseController::Throttle);
 
+	// Spacebar / LShift for altitude.
 	PlayerInputComponent->BindAxis("Rise", this, &AMouseController::Rise);
 }
 
@@ -62,6 +66,8 @@ void AMouseController::EndTurn()
 	// Ending Human turn.
 	if (CurrentTurn == EAffiliation::HUMAN)
 	{
+		// What happens when the Human ends their turn.
+
 		CurrentTurn = EAffiliation::AI;
 
 		UMapMaker::GenerateLargestConcentrationOfHumans();
@@ -75,6 +81,8 @@ void AMouseController::EndTurn()
 	}
 	else // Ending AI turn.
 	{
+		// What happens when the AI ends their turn.
+
 		CurrentTurn = EAffiliation::HUMAN;
 	}
 
@@ -162,14 +170,19 @@ void AMouseController::LMBPressed(ABlock* ClickedBlock)
 		{
 			if (!ClickedBlock->Occupant)
 			{
+				// If the clicked block is traversable and the selected warrior has not already moved.
 				if (Traversable.Contains(ClickedBlock) && !AlreadyMovedWarriors.Contains(CurrentlySelectedWarrior))
 				{
+					// Allow movement.
 					CurrentlySelectedWarrior->MoveTo(ClickedBlock);
+
+					// Mark the selected warrior as moved.
 					AlreadyMovedWarriors.Add(CurrentlySelectedWarrior);
 				}
 			}
 		}
 
+		// Disallow any other warriors from moving to a previously traversable block.
 		ClearTraversable();
 
 		// Reset the currently selected block.

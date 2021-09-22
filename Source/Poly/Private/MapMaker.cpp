@@ -68,11 +68,21 @@ void UMapMaker::GenerateLargestConcentrationOfHumans()
 	TArray<ABlock*> CopyOfMap = Instance->Map;
 
 	ABlock* MaxHuman = CopyOfMap[MapMidPoint()];
+
+	// Defualt the largest concentration of Humans to the centre of the map.
+	if (AWarrior::NumberOfHuman == 0)
+	{
+		HumanConcentration = MaxHuman;
+		return;
+	}
+
 	int LargestHuman = 0;
 
+	// For every block in the map.
 	for (int i = 0; i < CopyOfMap.Num(); ++i)
 	{
-		bool bAIMax = LargestHuman >= Instance->Map.Num() / 2 - 1;
+		// Limit the search if the largest concetration of Humans is greater than half the map, or if it is greater than half of the initial population of spawned warriors.
+		bool bAIMax = LargestHuman >= Instance->Map.Num() / 2 - 1 || LargestHuman >= Instance->NumberOfWarriors / 2 - 1;
 
 		if (bAIMax)
 		{
@@ -80,6 +90,7 @@ void UMapMaker::GenerateLargestConcentrationOfHumans()
 		}
 		else
 		{
+			// If the search can continue, set the largest concentration.
 			if (CopyOfMap[i]->HumanAttacked > LargestHuman)
 			{
 				LargestHuman = CopyOfMap[i]->AIAttacked;
@@ -89,6 +100,7 @@ void UMapMaker::GenerateLargestConcentrationOfHumans()
 
 	}
 
+	// The block with the largest number of Human control.
 	HumanConcentration = MaxHuman;
 }
 
@@ -97,11 +109,21 @@ void UMapMaker::GenerateLargestConcentrationOfAI()
 	TArray<ABlock*> CopyOfMap = Instance->Map;
 
 	ABlock* MaxAI = CopyOfMap[MapMidPoint()];
+
+	// Defualt the largest concentration of AI to the centre of the map.
+	if (AWarrior::NumberOfAI == 0)
+	{
+		AIConcentration = MaxAI;
+		return;
+	}
+
 	int LargestAI = 0;
 
+	// For every block in the map.
 	for (int i = 0; i < CopyOfMap.Num(); ++i)
 	{
-		bool bAIMax = LargestAI >= Instance->NumberOfWarriors / 2 - 1;
+		// Limit the search if the largest concetration of AI is greater than half the map, or if it is greater than half of the initial population of spawned warriors.
+		bool bAIMax = LargestAI >= Instance->NumberOfWarriors / 2 - 1 || LargestAI >= Instance->NumberOfWarriors / 2 - 1;
 
 		if (bAIMax)
 		{
@@ -109,6 +131,7 @@ void UMapMaker::GenerateLargestConcentrationOfAI()
 		}
 		else
 		{
+			// If the search can continue, set the largest concentration.
 			if (CopyOfMap[i]->AIAttacked > LargestAI)
 			{
 				LargestAI = CopyOfMap[i]->AIAttacked;
@@ -118,6 +141,7 @@ void UMapMaker::GenerateLargestConcentrationOfAI()
 
 	}
 
+	// The block with the largest number of AI control.
 	AIConcentration = MaxAI;
 }
 
@@ -129,27 +153,32 @@ ABlock* UMapMaker::RandomBlock()
 	return Map[RandomBlockIndex];
 }
 
+// The middle of the map, based on the X-Axis.
 int UMapMaker::MapMidPoint()
 {
+	// The mid point of the map is defined as the (X length + 1) / (Half of X length).
 	return (Instance->XMap + 1) * (Instance->XMap / 2);
 }
 
 void UMapMaker::PlaceBlocks()
 {
-	float Offset = FMath::RandRange(-10000.f, 10000.f);
+	float Scale = FMath::RandRange(-10000.f, 10000.f);
 
+	// Should Map Maker generate a Falloff Map?
 	TArray<float> FalloffMap;
 	if (bUseFalloffMap)
 	{
 		FalloffMap = GenerateFalloffMap();
 	}
 
+	// Should Map Maker generate Continents?
 	TArray<float> Continents;
 	if (bGenerateContinents)
 	{
 		Continents = GenerateContinents();
 	}
 
+	// Should Map Maker compute the Equator?
 	TArray<int> Equator;
 	if (bComputeEquatorialEnvironment)
 	{
@@ -163,16 +192,18 @@ void UMapMaker::PlaceBlocks()
 		{
 			int Position = y * XMap + x;
 
-			float Perlin = FMath::PerlinNoise2D(FVector2D(x + Offset, y + Offset) * Roughness);
+			float Perlin = FMath::PerlinNoise2D(FVector2D(x + Scale, y + Scale) * Roughness);
 
 			// Set Perlin to be between 0 and 1.
 			Perlin = (Perlin + 1) / 2;
 
+			// If Continents are requested, subtract Perlin from the Continents mapping.
 			if (bGenerateContinents)
 			{
 				Perlin -= Continents[Position];
 			}
 
+			// If a Falloff Map is requested, subtract Perlin from the Falloff Map values.
 			if (bUseFalloffMap)
 			{
 				Perlin -= FalloffMap[Position];
@@ -210,6 +241,7 @@ void UMapMaker::PlaceBlocks()
 	}
 }
 
+// Spawns a block into the world and initialises it.
 ABlock* UMapMaker::SpawnBlock(UClass* Class, const int& X, const int& Y, EType TerrainType)
 {
 	ABlock* NewBlock = GetWorld()->SpawnActor<ABlock>(Class, FVector(X * 100, Y * 100, 0), FRotator::ZeroRotator);
@@ -222,7 +254,8 @@ ABlock* UMapMaker::SpawnBlock(UClass* Class, const int& X, const int& Y, EType T
 
 void UMapMaker::ConnectBlocks()
 {
-	//if (NumberOfWarriors == 0) { return; }
+	// Do not connect blocks if there warriors are not requested.
+	if (NumberOfWarriors == 0) { return; }
 
 	// Connect neighbours.
 	for (int y = 0; y < YMap; ++y)
@@ -231,15 +264,21 @@ void UMapMaker::ConnectBlocks()
 		{
 			uint16 Index = y * XMap + x;
 
+			// Do not attempt to connect blocks if Index is an EType::Mountain or EType::Water.
+			if (Map[Index]->Type == EType::MOUNTAIN || Map[Index]->Type == EType::WATER)
+			{
+				continue;
+			}
+
 			//	North
-			if (IsIndexInMapRange(x	   , y + 1, Index)) { Map[Index]->North		= Map[ Index       + YMap];	}
+			if (IsIndexInMapRange(x	   , y + 1, Index)) { Map[Index]->North		= Map[ Index      + YMap];	}
 			//	North-East
 			if (IsIndexInMapRange(x - 1, y + 1, Index)) { Map[Index]->NorthEast	= Map[(Index - 1) + YMap];	}
 			//	North-West
 			if (IsIndexInMapRange(x + 1, y + 1, Index)) { Map[Index]->NorthWest	= Map[(Index + 1) + YMap];	}
 
 			//	South
-			if (IsIndexInMapRange(x    , y - 1, Index)) { Map[Index]->South		= Map[ Index       - YMap];	}
+			if (IsIndexInMapRange(x    , y - 1, Index)) { Map[Index]->South		= Map[ Index      - YMap];	}
 			//	South-East
 			if (IsIndexInMapRange(x - 1, y - 1, Index)) { Map[Index]->SouthEast	= Map[(Index - 1) - YMap];	}
 			//	South-West
@@ -291,9 +330,12 @@ void UMapMaker::SpawnWarriors()
 	AWarrior::NumberOfHuman = NumberOfWarriors;
 }
 
+// Generates a Falloff Map. (A Map surrounded by Water/Shallow; an island).
 TArray<float> UMapMaker::GenerateFalloffMap()
 {
 	TArray<float> FalloffValues;
+
+	// Initialise to all zeroes.
 	FalloffValues.Init(0, XMap * YMap);
 
 	for (int y = 0; y < YMap; ++y)
@@ -302,34 +344,47 @@ TArray<float> UMapMaker::GenerateFalloffMap()
 		{
 			int Position = y * XMap + x;
 
+			// The ratio distance between this X and Y block from the edge of the intended Map.
+			// Clamped to be between -1 and 1.
 			float XFalloff = x / (float)XMap * 2 - 1;
 			float YFalloff = y / (float)YMap * 2 - 1;
 
+			// Which X or Y Falloff is closest to the edge of the map.
 			float ClosestToEdge = FMath::Max(FMath::Abs(XFalloff), FMath::Abs(YFalloff));
 
-			FalloffValues[Position] = Smooth(ClosestToEdge, CurveStrength, FalloffBias);
+			// Set the Falloff map as a transition between the value closest to the edge and Transition.
+			FalloffValues[Position] = Transition(ClosestToEdge, CurveStrength, FalloffBias);
 		}
 	}
 
+	// The Falloff values, indexed by Y * XMap + X.
 	return FalloffValues;
 }
 
 // (v ^ a) / (v ^ a + (b - bv) ^ a).
-float UMapMaker::Smooth(const float& v, const float& a, const float& b)
+float UMapMaker::Transition(const float& V, const float& A, const float& B)
 {
-	float Numerator = FMath::Pow(v, a);
-	float Denominator = FMath::Pow(b - b * v, a);
+	// (v ^ a).
+	float Numerator = FMath::Pow(V, A);
+
+	// (b - bv) ^ a.
+	float Denominator = FMath::Pow(B - B * V, A);
+
+	// (v ^ a) / (v ^ a + (b - bv) ^ a).
 	float Function = Numerator / (Numerator + Denominator);
 
 	return Function;
 }
 
+// Generates Continents. (A large landmass, split by Water/Shallow).
 TArray<float> UMapMaker::GenerateContinents()
 {
 	TArray<float> Continents;
+
+	// Initialise to all zeroes.
 	Continents.Init(0, XMap * YMap);
 
-	float Offset = FMath::RandRange(-10000.f, 10000.f);
+	float Scale = FMath::RandRange(-10000.f, 10000.f);
 
 	for (int y = 0; y < YMap; ++y)
 	{
@@ -337,10 +392,13 @@ TArray<float> UMapMaker::GenerateContinents()
 		{
 			int Position = y * XMap + x;
 
-			float Perlin = FMath::PerlinNoise2D(FVector2D(x + Offset, y + Offset) * SplitRoughness);
+			// Get Perlin Noise value at these coordiantes.
+			float Perlin = FMath::PerlinNoise2D(FVector2D(x + Scale, y + Scale) * SplitRoughness);
 
+			// Clamp between 0 and 1.
 			Perlin = (Perlin + 1) / 2;
 
+			// If this Perlin Noise value qualifies as a split, assign it to Continents.
 			if (Perlin < SplitLimit)
 			{
 				Continents[Position] = FMath::Clamp<float>(Perlin + SplitDistance, 0, 1);
@@ -348,6 +406,7 @@ TArray<float> UMapMaker::GenerateContinents()
 		}
 	}
 
+	// The Continent values, assigned as dips in the Map.
 	return Continents;
 }
 
@@ -372,28 +431,40 @@ bool UMapMaker::IsIndexInMapRange(const uint16& X, const uint16& Y, const uint16
 	return true;
 }
 
+// Computes the Equatorial bounds of the map, according to Equator Influence.
+// Do not use ABlock*'s to determine positions, this function is called before there are any blocks on the map.
+// This method is purely numerical. Modify with confidence. Proceed with caution.
 TArray<int> UMapMaker::ComputeEquator()
 {
 	TArray<int> Equator;
+
+	// Initialise to all zeroes.
 	Equator.Init(0, XMap * YMap);
 
+	// NullIsland is the middle of Earth where the Prime Meridian intersects the Equator.
 	int NullIsland = MapMidPoint();
 	Equator.Add(NullIsland);
 
+	// The Map's half X value.
 	int MX = XMap / 2;
+	// The Map's half Y value.
 	int MY = YMap / 2;
 
+	// Values at the vertical centre of the Equator.
 	TArray<FVector2D> PrimeMeridian;
 	PrimeMeridian.Add(FVector2D(MX, MY));
 
-	float Offset = FMath::RandRange(-10000.f, 10000.f);
+	float Scale = FMath::RandRange(-10000.f, 10000.f);
 	
+	// Compute the bounds North (and North West) of the Equator, limited by Equator Influence.
 	for (int i = 0; i < EquatorInfluence; ++i)
 	{
+		// Offset the relative mid X and Y points by the Equator Influence for North West.
 		int RelativeX = MX + i + 1;
 		int RelativeY = MY + i + 1;
 		int RelativeMid = RelativeY * XMap + RelativeX;
 
+		// If these mid points are valid, add them to the Equator.
 		if (IsIndexInMapRange(RelativeX, RelativeY, RelativeMid))
 		{
 			int NorthWest = RelativeY * XMap + RelativeX;
@@ -401,10 +472,12 @@ TArray<int> UMapMaker::ComputeEquator()
 			Equator.Add(NorthWest);
 		}
 
+		// Offset the relative mid X and Y points by the Equator Influence for North.
 		RelativeX = MX + i;
 		RelativeY = MY + i + 1;
 		RelativeMid = RelativeY * XMap + RelativeX;
 
+		// If these mid points are valid, add them to the Equator.
 		if (IsIndexInMapRange(RelativeX, RelativeY, RelativeMid))
 		{
 			int North = RelativeY * XMap + RelativeX;
@@ -413,12 +486,15 @@ TArray<int> UMapMaker::ComputeEquator()
 		}
 	}
 
+	// Compute the bounds South (and South East) of the Equator, limited by Equator Influence.
 	for (int i = 0; i < EquatorInfluence; ++i)
 	{
+		// Offset the relative mid X and Y points by the Equator Influence for South East.
 		int RelativeX = MX - i - 1;
 		int RelativeY = MY - i - 1;
 		int RelativeMid = RelativeY * XMap + RelativeX;
 
+		// If these mid points are valid, add them to the Equator.
 		if (IsIndexInMapRange(RelativeX, RelativeY, RelativeMid))
 		{
 			int SouthEast = RelativeY * XMap + RelativeX;
@@ -426,10 +502,12 @@ TArray<int> UMapMaker::ComputeEquator()
 			Equator.Add(SouthEast);
 		}
 
+		// Offset the relative mid X and Y points by the Equator Influence for South.
 		RelativeX = MX - i;
 		RelativeY = MY - i - 1;
 		RelativeMid = RelativeY * XMap + RelativeX;
 
+		// If these mid points are valid, add them to the Equator.
 		if (IsIndexInMapRange(RelativeX, RelativeY, RelativeMid))
 		{
 			int South = RelativeY * XMap + RelativeX;
@@ -438,58 +516,71 @@ TArray<int> UMapMaker::ComputeEquator()
 		}
 	}
 
+	// For every point in the Prime Meridian, go left and right and add them to the Equator.
 	for (FVector2D NESW : PrimeMeridian)
 	{
+		// Right.
+		// North East of the this point in the Prime Meridian.
 		int X = NESW.X - 1;
 		int Y = NESW.Y + 1;
 		int R = Y * XMap + X;
 
 		FVector2D NE = FVector2D(X, Y);
 
+		// Keep going North East until the edge of the map.
 		while (IsIndexInMapRange(NE.X, NE.Y, R))
 		{
 			int Position = NE.Y * XMap + NE.X;
 
-			float Perlin = FMath::PerlinNoise2D(FVector2D(NE.X + Offset, NE.Y + Offset) * EquatorRoughness);
-			Perlin = (Perlin + 1) / 2;
-
-			if (Perlin - Smooth(Perlin, EquatorStrength, EquatorBias) < EquatorSpread)
+			if (!Equator.Contains(Position))
 			{
-				if (!Equator.Contains(Position))
+				float Perlin = FMath::PerlinNoise2D(FVector2D(NE.X + Scale, NE.Y + Scale) * EquatorRoughness);
+				Perlin = (Perlin + 1) / 2;
+
+				// If the Perlin Noise value qualifies as a point in the Equator, mark it as part of the Equator.
+				if (Perlin - Transition(Perlin, EquatorStrength, EquatorBias) < EquatorSpread)
 				{
 					Equator.Add(Position);
 				}
 			}
 
+			// Continue going North East.
 			NE = FVector2D(NE.X - 1, NE.Y + 1);
 			R = Position;
 		}
 		
+		// Left.
+		// South West of this point in the Prime Meridian.
 		X = NESW.X + 1;
 		Y = NESW.Y - 1;
 		R = Y * XMap + X;
 
 		FVector2D SW = FVector2D(X, Y);
+
+		// Keep going South West until the edge of the map.
 		while (IsIndexInMapRange(SW.X, SW.Y, R))
 		{
 			int Position = SW.Y * XMap + SW.X;
 
-			float Perlin = FMath::PerlinNoise2D(FVector2D(SW.X + Offset, SW.Y + Offset) * EquatorRoughness);
-			Perlin = (Perlin + 1) / 2;
-
-			if (Perlin - Smooth(Perlin, EquatorStrength, EquatorBias) < EquatorSpread)
+			if (!Equator.Contains(Position))
 			{
-				if (!Equator.Contains(Position))
+				float Perlin = FMath::PerlinNoise2D(FVector2D(SW.X + Scale, SW.Y + Scale) * EquatorRoughness);
+				Perlin = (Perlin + 1) / 2;
+
+				// If the Perlin Noise value qualifies as a point in the Equator, mark it as part of the Equator.
+				if (Perlin - Transition(Perlin, EquatorStrength, EquatorBias) < EquatorSpread)
 				{
 					Equator.Add(Position);
 				}
 			}
 
+			// Continue going South West.
 			SW = FVector2D(SW.X + 1, SW.Y - 1);
 			R = Position;
 		}
 	}
 
+	// The Index values of blocks that make up the Equator.
 	return Equator;
 }
 

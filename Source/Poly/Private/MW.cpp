@@ -175,7 +175,7 @@ void UMW::DetermineMoves()
 
 	for (AWarrior* Evaluating : AIWarriors)
 	{
-		// TODO: If health is low and NOT in attack in 1 ply, revive itself.
+		// @TODO: If health is low and NOT in attack in 1 ply, revive itself.
 
 		ABlock* CurrentBlock = Evaluating->CurrentBlock;
 		//TArray<ABlock*> Traversable = CurrentBlock->GetTraversableBlocks();

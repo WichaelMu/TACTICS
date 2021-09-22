@@ -25,11 +25,14 @@ void ABlock::BeginPlay()
 	SetTraversableVisibility(false);
 }
 
+// Predict the future movement of the NearestHeuristic's closest Warrior, limited by Depth.
 TArray<ABlock*> ABlock::ComputeTrajectory(ABlock* NearestHeuristic, uint8 Depth)
 {
+	// Default From and To blocks to be the Nearest Heuristic as a default.
 	ABlock* From = NearestHeuristic;
 	ABlock* To = NearestHeuristic;
 
+	// Find the nearest Human Warrior with the given heuristic.
 	TArray<ABlock*> NeighbouringWarrior = NearestHeuristic->GetNeighbours();
 	for (ABlock* Query : NeighbouringWarrior)
 	{
@@ -51,6 +54,7 @@ TArray<ABlock*> ABlock::ComputeTrajectory(ABlock* NearestHeuristic, uint8 Depth)
 	int MinDistance = INT_MAX;
 	uint8 Orientation = 0;
 
+	// Find the last orientation of the target Warrior.
 	for (uint8 i = 0; i < 8; ++i)
 	{
 		ABlock* Neighbour = From->Get(i);
@@ -68,8 +72,11 @@ TArray<ABlock*> ABlock::ComputeTrajectory(ABlock* NearestHeuristic, uint8 Depth)
 
 	ABlock* Trajectory = From;
 
+	// Calculate the future trajectory, based on the last orientation.
 	while (Depth--)
 	{
+		// Continue going in this orientation until the depth limit is reached, or until there is no more block.
+
 		ABlock* Prediction = Trajectory->Get(Orientation);
 		if (Prediction)
 		{
@@ -82,6 +89,7 @@ TArray<ABlock*> ABlock::ComputeTrajectory(ABlock* NearestHeuristic, uint8 Depth)
 		}
 	}
 
+	// The result is the trajectory based off of the last Warrior's orientation, limited at depth.
 	return PossibleTrajectory;
 }
 
@@ -101,6 +109,7 @@ void ABlock::Selected(bool bSelected)
 		AMouseController::Instance->Traversable = GetTraversableBlocks();
 	}
 
+	// Show the white tiles?
 	SetTraversableVisibility(bSelected);
 }
 
@@ -160,7 +169,7 @@ ABlock* ABlock::Get(uint8 Orientation) const
 	}
 }
 
-/// <summary>Get Warrior-traversable blocks.</summary>
+// Get Warrior-traversable blocks and visually marks them for selection.
 TArray<ABlock*> ABlock::GetTraversableBlocks()
 {
 	TArray<ABlock*> Blocks;
@@ -179,10 +188,7 @@ TArray<ABlock*> ABlock::GetTraversableBlocks()
 	return Blocks;
 }
 
-/// <summary>Begins a breadth-first search at a depth limiter.</summary>
-/// <param name="Depth">The maximum depth to search to.</param>
-/// <param name="bIgnoreOccupants">Ignore ABlocks with occupants?</param>
-/// <returns>The BFS at a limit of depth, whilst considering occupants.</returns>
+// A depth-limited BFS, whilst considering occupants.
 TArray<ABlock*> ABlock::SearchAtDepth(uint8 Depth, const bool& bIgnoreOccupants)
 {
 	TArray<ABlock*> Result;
@@ -202,23 +208,29 @@ void ABlock::SearchDepthInitialise(TArray<ABlock*>& Blocks, uint8 Depth, const b
 	SearchDepthLogic(Blocks, Depth, Visited, Breadth, bIgnoreOccupants);
 }
 
+// The implementation of BFS at depth, whilst considering occupants.
 void ABlock::SearchDepthLogic(TArray<ABlock*>& Blocks, uint8 Depth, TSet<ABlock*>& Visited, TQueue<ABlock*>& Breadth, const bool& bIgnoreOccupants)
 {
 	if (Depth <= 0) { return; }
 
-	TQueue<ABlock*> TempQueue;
+	// A queue for the next depth to process.
+	// Do not process blocks in this queue, they'll be done in the next depth. (Provided the depth allows for it).
+	TQueue<ABlock*> NextDepthQueue;
 
+	// Simple BFS, recall from DSA.
 	while (!Breadth.IsEmpty())
 	{
 		ABlock* FrontBlock = *Breadth.Peek();
 		Breadth.Pop();
 
+		// Go FrontBlock's neighbours.
 		for (int i = 0; i < 8; ++i)
 		{
 			ABlock* QueryBlock = FrontBlock->Get(i);
 
 			if (QueryBlock)
 			{
+				// Skip this iteration if the function asks to ignore occupants.
 				if (bIgnoreOccupants)
 				{
 					if (QueryBlock->Occupant)
@@ -233,6 +245,7 @@ void ABlock::SearchDepthLogic(TArray<ABlock*>& Blocks, uint8 Depth, TSet<ABlock*
 					continue;
 				}
 
+				// Don't bother wasting time processing an already-visited block.
 				if (!Visited.Contains(QueryBlock))
 				{
 					Visited.Add(QueryBlock);
@@ -242,15 +255,18 @@ void ABlock::SearchDepthLogic(TArray<ABlock*>& Blocks, uint8 Depth, TSet<ABlock*
 						Blocks.Add(QueryBlock);
 					}
 
-					TempQueue.Enqueue(QueryBlock);
+					NextDepthQueue.Enqueue(QueryBlock);
 				}
 			}
 		}
 	}
 
-	SearchDepthLogic(Blocks, Depth - 1, Visited, TempQueue, bIgnoreOccupants);
+	// Recursively call this method, passing Blocks and Visited as references to carry on.
+	// Pass the NextDepthQueue as blocks that need to be processed at the next depth.
+	SearchDepthLogic(Blocks, Depth - 1, Visited, NextDepthQueue, bIgnoreOccupants);
 }
 
+// Get this block's neighbours.
 TArray<ABlock*> ABlock::GetNeighbours() const
 {
 	TArray<ABlock*> Neighbours;
@@ -266,16 +282,18 @@ TArray<ABlock*> ABlock::GetNeighbours() const
 /// <param name="RelativeTo">Finds opposing affiliations, relative to this Affiliation.</param>
 TArray<AWarrior*> ABlock::SurroundingEnemiesInRange(EAffiliation RelativeTo)
 {
+	// A warrior is in range if they are at least 3 blocks away. (Movement Range = 2, Attack Range = 1).
 	TArray<ABlock*> Range = SearchAtDepth(3);
 	TArray<AWarrior*> Enemies;
 
+	// If any block in range has an opponent RelativeTo, add them.
 	for (ABlock* W : Range)
 	{
 		if (W->Occupant)
 		{
-			if (W->Occupant->Affiliation != EAffiliation::AI)
+			if (W->Occupant->Affiliation != RelativeTo)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Block: %s has %s"), *W->GetName(), *W->Occupant->GetName());
+				// UE_LOG(LogTemp, Warning, TEXT("Block: %s has %s"), *W->GetName(), *W->Occupant->GetName());
 				Enemies.Add(W->Occupant);
 			}
 		}
@@ -284,44 +302,21 @@ TArray<AWarrior*> ABlock::SurroundingEnemiesInRange(EAffiliation RelativeTo)
 	return Enemies;
 }
 
-/// <summary>The closest block to a Human out of the Range of Humans.</summary>
-/// <param name="RangeOfHumans">The range of blocks to check for the closest Human.</param>
-/// <returns>The ABlock to close in on.</returns>
-ABlock* ABlock::GetClosestBlockToAHuman(TArray<ABlock*> RangeOfHumans)
+// Is this block directly next to the opposition RelativeTo.
+bool ABlock::IsNextToAffiliation(const EAffiliation& RelativeTo)
 {
-	float MinDistance = INT_MAX;
-	ABlock* Furthest = this;
-
-	for (ABlock* Query : RangeOfHumans)
-	{
-		if (Query->IsNextToAffiliation(EAffiliation::HUMAN))
-		{
-			return Query;
-		}
-
-		float ReferenceDistance = FVector::DistSquared(GetWarriorPosition(), Query->GetWarriorPosition());
-		if (ReferenceDistance < MinDistance)
-		{
-			MinDistance = ReferenceDistance;
-			Furthest = Query;
-		}
-	}
-
-	return Furthest;
-}
-
-/// <summary>Is this block directly next to a Human?</summary>
-bool ABlock::IsNextToAffiliation(const EAffiliation& Neighbour)
-{
+	// For every neighbour.
 	for (int i = 0; i < 8; ++i)
 	{
 		ABlock* NeighbouringBlock = Get(i);
 		if (NeighbouringBlock)
 		{
 			AWarrior* Warrior = NeighbouringBlock->Occupant;
+			
+			// If the neighbour is occupied with a Warrior and is a member of the opposition.
 			if (Warrior)
 			{
-				if (Warrior->Affiliation == Neighbour)
+				if (Warrior->Affiliation == RelativeTo)
 				{
 					return true;
 				}
@@ -336,23 +331,32 @@ bool ABlock::IsNextToAffiliation(const EAffiliation& Neighbour)
 /// <param name="DeductingAffiliation">The Affiliation to deduct from.</param>
 void ABlock::DeductAttacks(EAffiliation DeductingAffiliation)
 {
+	// Attacking range is 3. (Movement Range = 2, Attacking Range = 1).
+	// Do not ignore occupants, we need to deduct from blocks regardless of occupancy.
 	TArray<ABlock*> Depth = SearchAtDepth(3, false);
 
+	// Deduct for humans.
 	if (DeductingAffiliation == EAffiliation::HUMAN)
 	{
+		// Deduct from this block.
 		HumanAttacked--;
 
+		// Deduct from blocks around Depth.
 		for (ABlock* Block : Depth)
 		{
+			// Clamp the number of attacks to a minimum of zero.
 			Block->HumanAttacked = FMath::Max<int>(0, Block->HumanAttacked - 1);
 		}
 	}
-	else
+	else // Deduct for AI.
 	{
+		// Deduct from this block.
 		AIAttacked--;
 
+		// Deduct from blocks around Depth.
 		for (ABlock* Block : Depth)
 		{
+			// Clamp the number of attacks to a minimum of zero.
 			Block->AIAttacked = FMath::Max<int>(0, Block->AIAttacked - 1);
 		}
 	}
@@ -360,19 +364,24 @@ void ABlock::DeductAttacks(EAffiliation DeductingAffiliation)
 
 /// <summary>Append the attacking heuristic.</summary>
 /// <param name="DeductingAffiliation">The Affiliation to append to.</param>
-void ABlock::AppendAttacks(EAffiliation DeductingAffiliation)
+void ABlock::AppendAttacks(EAffiliation AppendingAffiliation)
 {
+	// Attacking range is 3. (Movement Range = 2, Attacking Range = 1).
+	// Do not ignore occupants, we need to deduct from blocks regardless of occupancy.
 	TArray<ABlock*> Depth = SearchAtDepth(3, false);
 
-	if (DeductingAffiliation == EAffiliation::HUMAN)
+	// Append for humans.
+	if (AppendingAffiliation == EAffiliation::HUMAN)
 	{
+		// Append to blocks around Depth.
 		for (ABlock* Block : Depth)
 		{
 			Block->HumanAttacked++;
 		}
 	}
-	else
+	else // Append for AI.
 	{
+		// Append to blocks around Depth.
 		for (ABlock* Block : Depth)
 		{
 			Block->AIAttacked++;

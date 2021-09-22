@@ -9,7 +9,6 @@
 class AWarrior;
 class ABlock;
 class UMoves;
-class UWorld;
 
 /**
  * Pathfinding.

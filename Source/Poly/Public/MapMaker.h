@@ -129,7 +129,7 @@ private:
 
 	TArray<float> GenerateFalloffMap();
 	TArray<float> GenerateContinents();
-	static float Smooth(const float&, const float&, const float&);
+	static float Transition(const float&, const float&, const float&);
 
 	//	If X and Y are in the ranges of Map.
 	bool IsIndexInMapRange(const uint16& X, const uint16& Y, const uint16& Index) const;

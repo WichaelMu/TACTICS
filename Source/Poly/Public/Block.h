@@ -98,7 +98,6 @@ public:
 	TArray<ABlock*> SearchAtDepth(uint8 Range, const bool& bIgnoreOccupants = true);
 
 	TArray<AWarrior*> SurroundingEnemiesInRange(EAffiliation);
-	ABlock* GetClosestBlockToAHuman(TArray<ABlock*>);
 	bool IsNextToAffiliation(const EAffiliation&);
 
 	void DeductAttacks(EAffiliation);

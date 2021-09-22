@@ -71,6 +71,7 @@ void AWarrior::OnSpawn(ABlock* SpawnedBlock, EAffiliation TeamAffiliation)
 	this->Affiliation = TeamAffiliation;
 	if (SpawnedBlock)
 	{
+		// Default Previous and Current Block to the block this Warrior spawned on.
 		PreviousBlock = SpawnedBlock;
 		CurrentBlock = SpawnedBlock;
 
@@ -116,6 +117,7 @@ void AWarrior::UpdateBlock(ABlock* NewBlock)
 // Update the attack references on the block.
 void AWarrior::UpdateBlockAttacks(ABlock* From, ABlock* To)
 {
+	// Prevent deducting attacks On Spawn.
 	if (From != To)
 	{
 		From->DeductAttacks(Affiliation);
@@ -147,10 +149,12 @@ void AWarrior::KillThisWarrior()
 	// Move this warrior somewhere out of the screen.
 	SetActorLocation(FVector(40000.f));
 
+	// Deregister the Current Block's attacks and occupant.
 	CurrentBlock->DeductAttacks(Affiliation);
 	CurrentBlock->Occupant = nullptr;
 	CurrentBlock = nullptr;
 
+	// Reduce the number of Affiliation members.
 	if (Affiliation == EAffiliation::HUMAN)
 	{
 		NumberOfHuman--;
@@ -161,6 +165,7 @@ void AWarrior::KillThisWarrior()
 	}
 }
 
+// Move towards Relative, accounting for traversable blocks and pathfinding.
 ABlock* AWarrior::MoveTowardsBlock(ABlock* Relative)
 {
 	CurrentPath = UMW::Pathfind(CurrentBlock, Relative);
@@ -170,10 +175,15 @@ ABlock* AWarrior::MoveTowardsBlock(ABlock* Relative)
 		DrawDebugLine(GetWorld(), CurrentPath[i]->GetWarriorPosition(), CurrentPath[i + 1]->GetWarriorPosition(), FColor::Blue, true, 10, 0, 10);
 	}
 
+	// Go towards the path if Relative is too far away.
 	if (CurrentPath.Num() > 1)
 	{
 		return CurrentPath.Last(1);
 	}
+
+	// Below is distance-based pathfinding in case UMW::Pathfind(ABlock*, ABlock*) fails.
+	// It usually fails if the target is exactly 1 block away from Relative, in which case,
+	// it is completely find to use distance to determine a path, as it is already close enough.
 
 	ABlock* Towards = CurrentBlock;
 
@@ -208,7 +218,7 @@ void AWarrior::DeductHealth()
 	}
 }
 
-// Gets every ABlock around CurrentBlock if it is occupied.
+// Gets every ABlock around CurrentBlock if it is occupied and the occupant is the opposition.
 TArray<AWarrior*> AWarrior::GetAttackableWarriors()
 {
 	TArray<AWarrior*> Attackable;
@@ -254,6 +264,7 @@ ABlock* AWarrior::FindSafestBlock()
 {
 	TArray<AWarrior*> NearbyEnemies = CurrentBlock->SurroundingEnemiesInRange(Affiliation);
 
+	// If there are no enemies in the range of 1 ply, or if the health is critical, Revive.
 	if (NearbyEnemies.Num() == 0 && Health <= 4) {
 		Revive();
 		return CurrentBlock;
@@ -261,12 +272,14 @@ ABlock* AWarrior::FindSafestBlock()
 
 	TArray<ABlock*> Traversable = CurrentBlock->GetTraversableBlocks();
 
+	// Default values for safest block.
 	ABlock* MaximumAI = CurrentBlock;
 	ABlock* MinimalHumans = CurrentBlock;
 
 	int MaxAI = INT_MIN;
 	int MinHuman = INT_MAX;
 
+	// For every block that is traversable, find the number of AI/Human influence on them.
 	for (ABlock* Block : Traversable)
 	{
 		if (Block->AIAttacked > MaxAI)
@@ -282,6 +295,7 @@ ABlock* AWarrior::FindSafestBlock()
 		}
 	}
 	
+	// Prioritise going towards AI if there are more of them, otherwise, go towards the place with minimal humans.
 	return MaxAI > MinHuman ? MaximumAI : MinimalHumans;
 }
 
@@ -359,7 +373,7 @@ ABlock* AWarrior::FindKillableHuman()
 	CurrentPath.Empty();
 
 	// Find a block that minimises the distance to an enemy.
-	ABlock* BestMove = CurrentBlock->GetClosestBlockToAHuman(DesirableBlocks);
+	ABlock* BestMove = MoveTowardsBlock(FindNearestAffiliation(EAffiliation::HUMAN));
 	return BestMove;
 }
 
@@ -427,12 +441,14 @@ ABlock* AWarrior::MoveTowardsConcentrationOfAI()
 
 ABlock* AWarrior::FindNearestAffiliation(const EAffiliation& Nearest)
 {
+	// AI has already won. Do not continue.
 	if (NumberOfHuman <= 0)
 	{
 		UMW::Log("NUMBER OF HUMANS IS ZERO");
 		return CurrentBlock;
 	}
 
+	// AI has lost. Do not continue.
 	if (NumberOfAI <= 0) {
 		UMW::Log("NUMBER OF AI IS ZERO");
 		return CurrentBlock;
@@ -443,6 +459,7 @@ ABlock* AWarrior::FindNearestAffiliation(const EAffiliation& Nearest)
 	Breadth.Enqueue(CurrentBlock);
 	ABlock* NextToAffiliation = CurrentBlock;
 
+	// Executes a BFS starting from CurrentBlock, fanning outwards until a Nearest warrior is found.
 	while (!Breadth.IsEmpty())
 	{
 		ABlock* FrontBlock = *Breadth.Peek();
@@ -454,6 +471,7 @@ ABlock* AWarrior::FindNearestAffiliation(const EAffiliation& Nearest)
 
 			if (QueryBlock)
 			{
+				// The Nearest warrior has been found, exit.
 				if (QueryBlock->IsNextToAffiliation(Nearest))
 				{
 					NextToAffiliation = QueryBlock;
@@ -463,6 +481,7 @@ ABlock* AWarrior::FindNearestAffiliation(const EAffiliation& Nearest)
 					break;
 				}
 
+				// Do not waste time queueing something that has been visited.
 				if (!Visited.Contains(QueryBlock))
 				{
 					Visited.Add(QueryBlock);
@@ -472,6 +491,7 @@ ABlock* AWarrior::FindNearestAffiliation(const EAffiliation& Nearest)
 		}
 	}
 
+	// The block that is next to or in striking range of Nearest.
 	return NextToAffiliation;
 }
 
@@ -479,6 +499,7 @@ void AWarrior::DealDamage()
 {
 	TArray<AWarrior*> SurroundingWarriors = GetAttackableWarriors();
 
+	// Deal damage to all opposition.
 	for (AWarrior* Warrior : SurroundingWarriors)
 	{
 		Warrior->DeductHealth();
