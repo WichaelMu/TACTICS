@@ -43,20 +43,20 @@ public:
 
 private:
 
-	void Forward(float);
-	void Right(float);
+	void Forward(float Throw);
+	void Right(float Throw);
 
 	float MoveAmplifier;
-	void Throttle(float);
+	void Throttle(float Throw);
 
-	void Rise(float);
+	void Rise(float Throw);
 
 	// Clamp the movement speed of the camera to this speed.
 	UPROPERTY(EditAnywhere)
 		float MinimumCameraMovementSpeed;
 
-	void CallByBlock(ABlock*);
-	void LMBPressed(ABlock*);
+	void CallByBlock(ABlock* ClickedBlock);
+	void LMBPressed(ABlock* ClickedBlock);
 	void ClearTraversable();
 
 	ABlock* CurrentlySelectedBlock = nullptr;

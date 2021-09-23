@@ -140,7 +140,7 @@ private:
 	static int MapMidPoint();
 
 	void PlaceBlocks();
-	ABlock* SpawnBlock(UClass*, const int&, const int&, EType);
+	ABlock* SpawnBlock(UClass* Class, const int& X, const int& Y, EType TerrainType);
 	void ConnectBlocks();
 	void SpawnWarriors();
 
@@ -148,7 +148,7 @@ private:
 
 	TArray<float> GenerateFalloffMap();
 	TArray<float> GenerateContinents();
-	static float Transition(const float&, const float&, const float&);
+	static float Transition(const float& V, const float& A, const float& B);
 
 	//	If X and Y are in the ranges of Map.
 	bool IsIndexInMapRange(const uint16& X, const uint16& Y, const uint16& Index) const;

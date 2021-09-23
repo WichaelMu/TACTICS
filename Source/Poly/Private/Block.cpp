@@ -157,7 +157,7 @@ int ABlock::CompareTo(ABlock* Comparison)
 
 
 // Get neighbour at a clockwise Orientation.
-ABlock* ABlock::Get(uint8 Orientation) const
+ABlock* ABlock::Get(const uint8& Orientation) const
 {
 	switch (Orientation)
 	{

@@ -30,7 +30,7 @@ protected:
 public:
 
 
-	static TArray<ABlock*> ComputeTrajectory(ABlock*, uint8);
+	static TArray<ABlock*> ComputeTrajectory(ABlock* NearestHeuristic, uint8 Depth);
 
 
 	UPROPERTY(VisibleAnywhere)
@@ -92,21 +92,21 @@ public:
 	EType Type;
 
 	// Get this block's neighbour at orientation.
-	ABlock* Get(uint8 Orientation) const;
+	ABlock* Get(const uint8& Orientation) const;
 
 	TArray<ABlock*> GetTraversableBlocks();
 	TArray<ABlock*> SearchAtDepth(uint8 Range, const bool& bIgnoreOccupants = true);
 
-	TArray<AWarrior*> SurroundingEnemiesInRange(EAffiliation);
-	bool IsNextToAffiliation(const EAffiliation&);
+	TArray<AWarrior*> SurroundingEnemiesInRange(EAffiliation RelativeTo);
+	bool IsNextToAffiliation(const EAffiliation& RelativeTo);
 
-	void DeductAttacks(EAffiliation);
-	void AppendAttacks(EAffiliation);
+	void DeductAttacks(EAffiliation DeductingAffiliation);
+	void AppendAttacks(EAffiliation AppendingAffiliation);
 
 private:
 
-	void SearchDepthInitialise(TArray<ABlock*>&, uint8, const bool& bIgnoreOccupants = true);
-	void SearchDepthLogic(TArray<ABlock*>& Blocks, uint8 Depth, TSet<ABlock*>& Visited, TQueue<ABlock*>& Breadth, const bool&);
+	void SearchDepthInitialise(TArray<ABlock*>& Blocks, uint8 Depth, const bool& bIgnoreOccupants = true);
+	void SearchDepthLogic(TArray<ABlock*>& Blocks, uint8 Depth, TSet<ABlock*>& Visited, TQueue<ABlock*>& Breadth, const bool& bIgnoreOccupants);
 
 
 	TArray<ABlock*> GetNeighbours() const;

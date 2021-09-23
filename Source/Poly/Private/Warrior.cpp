@@ -94,6 +94,23 @@ void AWarrior::OnSpawn(ABlock* SpawnedBlock, EAffiliation TeamAffiliation)
 }
 
 
+// Move this warrior to TargetBlock.
+void AWarrior::MoveTo(ABlock* TargetBlock)
+{
+	// TODO: Change the location of the warrior with interpolation and pathfinding.
+	if (CurrentBlock)
+	{
+		if (CurrentBlock != TargetBlock)
+		{
+			SetActorLocation(TargetBlock->GetWarriorPosition());
+			DealDamage();
+		}
+	}
+
+	UpdateBlock(TargetBlock);
+}
+
+
 // Update block information when moving between blocks.
 void AWarrior::UpdateBlock(ABlock* NewBlock)
 {
@@ -118,23 +135,6 @@ void AWarrior::UpdateBlockAttacks(ABlock* From, ABlock* To)
 	}
 
 	To->AppendAttacks(Affiliation);
-}
-
-
-// Move this warrior to TargetBlock.
-void AWarrior::MoveTo(ABlock* TargetBlock)
-{
-	// TODO: Change the location of the warrior with interpolation and pathfinding.
-	if (CurrentBlock)
-	{
-		if (CurrentBlock != TargetBlock)
-		{	
-			SetActorLocation(TargetBlock->GetWarriorPosition());
-			DealDamage();
-		}
-	}
-
-	UpdateBlock(TargetBlock);
 }
 
 

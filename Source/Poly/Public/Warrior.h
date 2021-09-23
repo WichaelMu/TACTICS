@@ -35,7 +35,7 @@ public:
 	static int32 EvaluateMap();
 
 
-	void OnSpawn(ABlock*, EAffiliation);
+	void OnSpawn(ABlock* SpawnedBlock, EAffiliation TeamAffiliation);
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -43,9 +43,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		UStaticMeshComponent* RootMesh;
 
-	void MoveTo(ABlock*);
-	void UpdateBlock(ABlock*);
-	void UpdateBlockAttacks(ABlock*, ABlock*);
+	void MoveTo(ABlock* TargetBlock);
+	void UpdateBlock(ABlock* NewBlock);
+	void UpdateBlockAttacks(ABlock* Departing, ABlock* Arriving);
 
 
 	UPROPERTY(VisibleAnywhere, Category = Health)
@@ -98,14 +98,14 @@ private:
 	// Search.
 	ABlock* ConcentrationOfHumans();
 	ABlock* ConcentrationOfAI();
-	ABlock* FindNearestAffiliation(const EAffiliation&);
+	ABlock* FindNearestAffiliation(const EAffiliation& Nearest);
 	TArray<ABlock*> CurrentPath;
 
 	void DealDamage();
 	bool HealthIsFatal();
 	void KillThisWarrior();
 
-	ABlock* MoveTowardsBlock(ABlock*);
+	ABlock* MoveTowardsBlock(ABlock* Relative);
 
 };
 

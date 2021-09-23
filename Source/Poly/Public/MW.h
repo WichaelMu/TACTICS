@@ -19,13 +19,13 @@ class POLY_API UMW : public UBlueprintFunctionLibrary
 	GENERATED_BODY()
 
 public:
-	static bool Pathfind(ABlock*, ABlock*, TArray<ABlock*>&);
-	static TArray<ABlock*> Pathfind(ABlock*, ABlock*);
+	static bool Pathfind(ABlock* Origin, ABlock* Destination, TArray<ABlock*>& Path);
+	static TArray<ABlock*> Pathfind(ABlock* Origin, ABlock* Destination);
 
 	static void RunAI();
-	static void Log(FString);
+	static void Log(FString Message);
 
-	static bool IsBlockTraversable(ABlock*);
+	static bool IsBlockTraversable(ABlock* Query);
 
 private:
 
