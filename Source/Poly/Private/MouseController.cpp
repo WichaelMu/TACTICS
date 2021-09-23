@@ -8,6 +8,7 @@
 #include "Block.h"
 #include "MapMaker.h"
 
+
 // Sets default values
 AMouseController::AMouseController()
 {
@@ -19,6 +20,7 @@ AMouseController::AMouseController()
 	CurrentTurn = EAffiliation::HUMAN;
 }
 
+
 // Called when the game starts or when spawned
 void AMouseController::BeginPlay()
 {
@@ -26,6 +28,7 @@ void AMouseController::BeginPlay()
 
 	MoveAmplifier = MinimumCameraMovementSpeed * 4;
 }
+
 
 // Called to bind functionality to input
 void AMouseController::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -44,22 +47,48 @@ void AMouseController::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAxis("Rise", this, &AMouseController::Rise);
 }
 
-// Called un ABlock::OnBlockClicked.
-/// <summary>What is done when an ABlock is clicked.</summary>
-/// <param name="ClickedBlock">The ABlock that was clicked.</param>
-void AMouseController::BlockClicked(ABlock* ClickedBlock)
+
+// Called by Forward Axis.
+/// <summary>Controls the forward/backward movement of the player.</summary>
+/// <param name="Throw"></param>
+void AMouseController::Forward(float Throw)
 {
-	// Called from ABlock::OnBlockClicked().
-	// Also called from ABlock::Blueprint::OnMouseClicked.
-	if (Instance)
+	FRotator ActorForwardYaw = GetControlRotation();
+	ActorForwardYaw.Pitch = 0;
+	ActorForwardYaw.Roll = 0;
+
+	SetActorLocation(GetActorLocation() + ActorForwardYaw.Vector() * Throw * MoveAmplifier * GetWorld()->GetDeltaSeconds());
+}
+
+
+// Called by Right Axis.
+/// <summary>Controls the left/right movement of the player.</summary>
+/// <param name="Throw"></param>
+void AMouseController::Right(float Throw)
+{
+	SetActorLocation(GetActorLocation() + GetActorRightVector() * Throw * MoveAmplifier * GetWorld()->GetDeltaSeconds());
+}
+
+
+// Called by Scroll Axis.
+/// <summary>Controls the movement speed of the player.</summary>
+/// <param name="Throw"></param>
+void AMouseController::Throttle(float Throw)
+{
+	MoveAmplifier += Throw * 100;
+	// Clamp the movement speed to a minimum of 1.
+	if (MoveAmplifier < MinimumCameraMovementSpeed)
 	{
-		Instance->CallByBlock(ClickedBlock);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("THERE IS NO AMOUSECONTROLLER::INSTANCE!"))
+		MoveAmplifier = MinimumCameraMovementSpeed;
 	}
 }
+
+
+void AMouseController::Rise(float Throw)
+{
+	SetActorLocation(GetActorLocation() + GetActorUpVector() * Throw * MoveAmplifier * GetWorld()->GetDeltaSeconds());
+}
+
 
 void AMouseController::EndTurn()
 {
@@ -89,42 +118,22 @@ void AMouseController::EndTurn()
 	AlreadyMovedWarriors.Empty();
 }
 
-// Called by Forward Axis.
-/// <summary>Controls the forward/backward movement of the player.</summary>
-/// <param name="Throw"></param>
-void AMouseController::Forward(float Throw)
-{
-	FRotator ActorForwardYaw = GetControlRotation();
-	ActorForwardYaw.Pitch = 0;
-	ActorForwardYaw.Roll = 0;
 
-	SetActorLocation(GetActorLocation() + ActorForwardYaw.Vector() * Throw * MoveAmplifier * GetWorld()->GetDeltaSeconds());
-}
-
-// Called by Right Axis.
-/// <summary>Controls the left/right movement of the player.</summary>
-/// <param name="Throw"></param>
-void AMouseController::Right(float Throw)
+// Called un ABlock::OnBlockClicked.
+/// <summary>What is done when an ABlock is clicked.</summary>
+/// <param name="ClickedBlock">The ABlock that was clicked.</param>
+void AMouseController::BlockClicked(ABlock* ClickedBlock)
 {
-	SetActorLocation(GetActorLocation() + GetActorRightVector() * Throw * MoveAmplifier * GetWorld()->GetDeltaSeconds());
-}
-
-// Called by Scroll Axis.
-/// <summary>Controls the movement speed of the player.</summary>
-/// <param name="Throw"></param>
-void AMouseController::Throttle(float Throw)
-{
-	MoveAmplifier += Throw * 100;
-	// Clamp the movement speed to a minimum of 1.
-	if (MoveAmplifier < MinimumCameraMovementSpeed)
+	// Called from ABlock::OnBlockClicked().
+	// Also called from ABlock::Blueprint::OnMouseClicked.
+	if (Instance)
 	{
-		MoveAmplifier = MinimumCameraMovementSpeed;
+		Instance->CallByBlock(ClickedBlock);
 	}
-}
-
-void AMouseController::Rise(float Throw)
-{
-	SetActorLocation(GetActorLocation() + GetActorUpVector() * Throw * MoveAmplifier * GetWorld()->GetDeltaSeconds());
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("THERE IS NO AMOUSECONTROLLER::INSTANCE!"))
+	}
 }
 
 
@@ -155,6 +164,7 @@ void AMouseController::CallByBlock(ABlock* ClickedBlock)
 		ClearTraversable();
 	}
 }
+
 
 /// <summary>What happens if an ABlock is clicked?</summary>
 /// <param name="ClickedBlock">The ABlock that was clicked.</param>
@@ -210,6 +220,7 @@ void AMouseController::LMBPressed(ABlock* ClickedBlock)
 		}
 	}
 }
+
 
 void AMouseController::ClearTraversable()
 {

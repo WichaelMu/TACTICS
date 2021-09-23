@@ -7,6 +7,7 @@
 #include "MW.h"
 #include "PoissonDisc.h"
 
+
 // Sets default values for this component's properties
 UMapMaker::UMapMaker()
 {
@@ -67,6 +68,7 @@ void UMapMaker::BeginPlay()
 	SpawnWarriors();
 }
 
+
 void UMapMaker::GenerateLargestConcentrationOfHumans()
 {
 	TArray<ABlock*> CopyOfMap = Instance->Map;
@@ -107,6 +109,7 @@ void UMapMaker::GenerateLargestConcentrationOfHumans()
 	// The block with the largest number of Human control.
 	HumanConcentration = MaxHuman;
 }
+
 
 void UMapMaker::GenerateLargestConcentrationOfAI()
 {
@@ -149,13 +152,6 @@ void UMapMaker::GenerateLargestConcentrationOfAI()
 	AIConcentration = MaxAI;
 }
 
-// A random block in Map.
-ABlock* UMapMaker::RandomBlock()
-{
-	int RandomBlockIndex = FMath::RandRange(0, Map.Num() - 1);
-
-	return Map[RandomBlockIndex];
-}
 
 // The middle of the map, based on the X-Axis.
 int UMapMaker::MapMidPoint()
@@ -163,6 +159,7 @@ int UMapMaker::MapMidPoint()
 	// The mid point of the map is defined as the (X length + 1) / (Half of X length).
 	return (Instance->XMap + 1) * (Instance->XMap / 2);
 }
+
 
 void UMapMaker::PlaceBlocks()
 {
@@ -246,6 +243,7 @@ void UMapMaker::PlaceBlocks()
 	}
 }
 
+
 // Spawns a block into the world and initialises it.
 ABlock* UMapMaker::SpawnBlock(UClass* Class, const int& X, const int& Y, EType TerrainType)
 {
@@ -257,97 +255,6 @@ ABlock* UMapMaker::SpawnBlock(UClass* Class, const int& X, const int& Y, EType T
 	return NewBlock;
 }
 
-void UMapMaker::ConnectBlocks()
-{
-	// Do not connect blocks if there warriors are not requested.
-	if (NumberOfWarriors == 0) { return; }
-
-	// Connect neighbours.
-	for (uint16 y = 0; y < YMap; ++y)
-	{
-		for (uint16 x = 0; x < XMap; ++x)
-		{
-			uint16 Index = y * XMap + x;
-
-			// Do not attempt to connect blocks if Index is an EType::Mountain or EType::Water.
-			if (Map[Index]->Type == EType::MOUNTAIN || Map[Index]->Type == EType::WATER)
-			{
-				continue;
-			}
-
-			//	North
-			if (IsIndexInMapRange(x	   , y + 1, Index)) { Map[Index]->North		= Map[ Index      + YMap];	}
-			//	North-East
-			if (IsIndexInMapRange(x - 1, y + 1, Index)) { Map[Index]->NorthEast	= Map[(Index - 1) + YMap];	}
-			//	North-West
-			if (IsIndexInMapRange(x + 1, y + 1, Index)) { Map[Index]->NorthWest	= Map[(Index + 1) + YMap];	}
-
-			//	South
-			if (IsIndexInMapRange(x    , y - 1, Index)) { Map[Index]->South		= Map[ Index      - YMap];	}
-			//	South-East
-			if (IsIndexInMapRange(x - 1, y - 1, Index)) { Map[Index]->SouthEast	= Map[(Index - 1) - YMap];	}
-			//	South-West
-			if (IsIndexInMapRange(x + 1, y - 1, Index)) { Map[Index]->SouthWest	= Map[(Index + 1) - YMap];	}
-
-			//	East
-			if (IsIndexInMapRange(x - 1, y    , Index)) { Map[Index]->East		= Map[ Index - 1];		}
-
-			//	West
-			if (IsIndexInMapRange(x + 1, y    , Index)) { Map[Index]->West		= Map[ Index + 1];		}
-		}
-	}
-}
-
-// Spawns 1 warrior for each affiliation for NumberOfWarrior times.
-void UMapMaker::SpawnWarriors()
-{
-	// Static T template's memory persist. Flush the Poisson Disc occupancy.
-	UPoissonDisc::Flush();
-
-	// Spawn warriors.
-	for (int i = 0; i < NumberOfWarriors; ++i)
-	{
-		// Spawn 1 warrior, for each team, given NumberOfWarriors.
-
-		ABlock* PoissonSpawnPoint = GetPoissonOrRandomBlock();
-
-		AWarrior* SpawnedWarrior1 = GetWorld()->SpawnActor<AWarrior>(Warrior, FVector::ZeroVector, FRotator::ZeroRotator);
-		SpawnedWarrior1->OnSpawn(PoissonSpawnPoint, EAffiliation::HUMAN);
-		AllWarriors.Add(SpawnedWarrior1);
-
-		PoissonSpawnPoint = GetPoissonOrRandomBlock();
-
-		AWarrior* SpawnedWarrior2 = GetWorld()->SpawnActor<AWarrior>(Warrior, FVector::ZeroVector, FRotator::ZeroRotator);
-		SpawnedWarrior2->OnSpawn(PoissonSpawnPoint, EAffiliation::AI);
-		AllWarriors.Add(SpawnedWarrior2);
-	}
-
-	AWarrior::NumberOfAI = NumberOfWarriors;
-	AWarrior::NumberOfHuman = NumberOfWarriors;
-}
-
-// Gets a block either MinimumDistance apart from another Warrior, or a random block on failure.
-ABlock* UMapMaker::GetPoissonOrRandomBlock()
-{
-	ABlock* PoissonSpawnPoint = nullptr;
-	
-	if (bGeneratePoissonSpawning)
-	{
-		PoissonSpawnPoint = UPoissonDisc::Sample(this, IterationsBeforeRejection, MinimumDistance);
-	}
-
-	// If Poisson Disc Sampling failed.
-	if (!PoissonSpawnPoint)
-	{
-		// Find a random block.
-		do
-		{
-			PoissonSpawnPoint = RandomBlock();
-		} while (!UMW::IsBlockTraversable(PoissonSpawnPoint));
-	}
-
-	return PoissonSpawnPoint;
-}
 
 // Generates a Falloff Map. (A Map surrounded by Water/Shallow; an island).
 TArray<float> UMapMaker::GenerateFalloffMap()
@@ -380,20 +287,6 @@ TArray<float> UMapMaker::GenerateFalloffMap()
 	return FalloffValues;
 }
 
-// (v ^ a) / (v ^ a + (b - bv) ^ a).
-float UMapMaker::Transition(const float& V, const float& A, const float& B)
-{
-	// (v ^ a).
-	float Numerator = FMath::Pow(V, A);
-
-	// (b - bv) ^ a.
-	float Denominator = FMath::Pow(B - B * V, A);
-
-	// (v ^ a) / (v ^ a + (b - bv) ^ a).
-	float Function = Numerator / (Numerator + Denominator);
-
-	return Function;
-}
 
 // Generates Continents. (A large landmass, split by Water/Shallow).
 TArray<float> UMapMaker::GenerateContinents()
@@ -430,31 +323,6 @@ TArray<float> UMapMaker::GenerateContinents()
 	return Continents;
 }
 
-// If X and Y are in the Map, given the relative Index.
-bool UMapMaker::IsIndexInMapRange(const uint16& X, const uint16& Y, const uint16& Index) const
-{
-	int Position = Y * XMap + X;
-
-	// If the Position is within Map.
-	if (!((XMap * YMap) > Position))
-	{
-		return false;
-	}
-
-	// If you're on the X border.
-	if (Index % XMap == XMap - 1)
-	{
-		// You can't go beyond the XMap or YMap.
-		return !(X + 1 > XMap || Y + 1 > YMap);
-	}
-
-	if (Map.Num() != 0)
-	{
-		return (Map[Position]->Type != EType::MOUNTAIN && Map[Position]->Type != EType::WATER);
-	}
-
-	return true;
-}
 
 // Computes the Equatorial bounds of the map, according to Equator Influence.
 // Do not use ABlock*'s to determine positions, this function is called before there are any blocks on the map.
@@ -481,7 +349,7 @@ TArray<int> UMapMaker::ComputeEquator()
 
 	float Offset = FMath::RandRange(-10000.f, 10000.f);
 	UMW::Log("Equator Seed: " + FString::SanitizeFloat(Offset) + " at " + FString::SanitizeFloat(EquatorRoughness) + " Equator Roughness");
-	
+
 	// Compute the bounds North (and North West) of the Equator, limited by Equator Influence.
 	for (int i = 0; i < EquatorInfluence; ++i)
 	{
@@ -574,7 +442,7 @@ TArray<int> UMapMaker::ComputeEquator()
 			NE = FVector2D(NE.X - 1, NE.Y + 1);
 			R = Position;
 		}
-		
+
 		// Left.
 		// South West of this point in the Prime Meridian.
 		X = NESW.X + 1;
@@ -608,5 +476,152 @@ TArray<int> UMapMaker::ComputeEquator()
 
 	// The Index values of blocks that make up the Equator.
 	return Equator;
+}
+
+
+// (v ^ a) / (v ^ a + (b - bv) ^ a).
+float UMapMaker::Transition(const float& V, const float& A, const float& B)
+{
+	// (v ^ a).
+	float Numerator = FMath::Pow(V, A);
+
+	// (b - bv) ^ a.
+	float Denominator = FMath::Pow(B - B * V, A);
+
+	// (v ^ a) / (v ^ a + (b - bv) ^ a).
+	float Function = Numerator / (Numerator + Denominator);
+
+	return Function;
+}
+
+
+void UMapMaker::ConnectBlocks()
+{
+	// Do not connect blocks if there warriors are not requested.
+	if (NumberOfWarriors == 0) { return; }
+
+	// Connect neighbours.
+	for (uint16 y = 0; y < YMap; ++y)
+	{
+		for (uint16 x = 0; x < XMap; ++x)
+		{
+			uint16 Index = y * XMap + x;
+
+			// Do not attempt to connect blocks if Index is an EType::Mountain or EType::Water.
+			if (Map[Index]->Type == EType::MOUNTAIN || Map[Index]->Type == EType::WATER)
+			{
+				continue;
+			}
+
+			//	North
+			if (IsIndexInMapRange(x	   , y + 1, Index)) { Map[Index]->North		= Map[ Index      + YMap];	}
+			//	North-East
+			if (IsIndexInMapRange(x - 1, y + 1, Index)) { Map[Index]->NorthEast	= Map[(Index - 1) + YMap];	}
+			//	North-West
+			if (IsIndexInMapRange(x + 1, y + 1, Index)) { Map[Index]->NorthWest	= Map[(Index + 1) + YMap];	}
+
+			//	South
+			if (IsIndexInMapRange(x    , y - 1, Index)) { Map[Index]->South		= Map[ Index      - YMap];	}
+			//	South-East
+			if (IsIndexInMapRange(x - 1, y - 1, Index)) { Map[Index]->SouthEast	= Map[(Index - 1) - YMap];	}
+			//	South-West
+			if (IsIndexInMapRange(x + 1, y - 1, Index)) { Map[Index]->SouthWest	= Map[(Index + 1) - YMap];	}
+
+			//	East
+			if (IsIndexInMapRange(x - 1, y    , Index)) { Map[Index]->East		= Map[ Index - 1];		}
+
+			//	West
+			if (IsIndexInMapRange(x + 1, y    , Index)) { Map[Index]->West		= Map[ Index + 1];		}
+		}
+	}
+}
+
+
+// If X and Y are in the Map, given the relative Index.
+bool UMapMaker::IsIndexInMapRange(const uint16& X, const uint16& Y, const uint16& Index) const
+{
+	int Position = Y * XMap + X;
+
+	// If the Position is within Map.
+	if (!((XMap * YMap) > Position))
+	{
+		return false;
+	}
+
+	// If you're on the X border.
+	if (Index % XMap == XMap - 1)
+	{
+		// You can't go beyond the XMap or YMap.
+		return !(X + 1 > XMap || Y + 1 > YMap);
+	}
+
+	if (Map.Num() != 0)
+	{
+		return (Map[Position]->Type != EType::MOUNTAIN && Map[Position]->Type != EType::WATER);
+	}
+
+	return true;
+}
+
+
+// Spawns 1 warrior for each affiliation for NumberOfWarrior times.
+void UMapMaker::SpawnWarriors()
+{
+	// Static T template's memory persist. Flush the Poisson Disc occupancy.
+	UPoissonDisc::Flush();
+
+	// Spawn warriors.
+	for (int i = 0; i < NumberOfWarriors; ++i)
+	{
+		// Spawn 1 warrior, for each team, given NumberOfWarriors.
+
+		ABlock* PoissonSpawnPoint = GetPoissonOrRandomBlock();
+
+		AWarrior* SpawnedWarrior1 = GetWorld()->SpawnActor<AWarrior>(Warrior, FVector::ZeroVector, FRotator::ZeroRotator);
+		SpawnedWarrior1->OnSpawn(PoissonSpawnPoint, EAffiliation::HUMAN);
+		AllWarriors.Add(SpawnedWarrior1);
+
+		PoissonSpawnPoint = GetPoissonOrRandomBlock();
+
+		AWarrior* SpawnedWarrior2 = GetWorld()->SpawnActor<AWarrior>(Warrior, FVector::ZeroVector, FRotator::ZeroRotator);
+		SpawnedWarrior2->OnSpawn(PoissonSpawnPoint, EAffiliation::AI);
+		AllWarriors.Add(SpawnedWarrior2);
+	}
+
+	AWarrior::NumberOfAI = NumberOfWarriors;
+	AWarrior::NumberOfHuman = NumberOfWarriors;
+}
+
+
+// Gets a block either MinimumDistance apart from another Warrior, or a random block on failure.
+ABlock* UMapMaker::GetPoissonOrRandomBlock()
+{
+	ABlock* PoissonSpawnPoint = nullptr;
+	
+	if (bGeneratePoissonSpawning)
+	{
+		PoissonSpawnPoint = UPoissonDisc::Sample(this, IterationsBeforeRejection, MinimumDistance);
+	}
+
+	// If Poisson Disc Sampling failed.
+	if (!PoissonSpawnPoint)
+	{
+		// Find a random block.
+		do
+		{
+			PoissonSpawnPoint = RandomBlock();
+		} while (!UMW::IsBlockTraversable(PoissonSpawnPoint));
+	}
+
+	return PoissonSpawnPoint;
+}
+
+
+// A random block in Map.
+ABlock* UMapMaker::RandomBlock()
+{
+	int RandomBlockIndex = FMath::RandRange(0, Map.Num() - 1);
+
+	return Map[RandomBlockIndex];
 }
 

@@ -16,6 +16,7 @@ void UPoissonDisc::Flush()
 	UPoissonDisc::Occupied.Empty();
 }
 
+
 // Try to find a block that is at least MinimumDistance away from another in MapMaker until IterationsBeforeRejection is reached.
 ABlock* UPoissonDisc::Sample(UMapMaker* MapMaker, const uint16& IterationsBeforeRejection, const uint8& MinimumDistance)
 {

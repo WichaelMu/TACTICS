@@ -75,6 +75,7 @@ bool UMW::Pathfind(ABlock* Origin, ABlock* Destination, TArray<ABlock*>& Path)
 
 }
 
+
 /// <summary>A* Pathfind from Origin to Destination.</summary>
 TArray<ABlock*> UMW::Pathfind(ABlock* Origin, ABlock* Destination)
 {
@@ -140,6 +141,7 @@ TArray<ABlock*> UMW::Pathfind(ABlock* Origin, ABlock* Destination)
 	return Path;
 }
 
+
 /// <summary>Whether or not this block is traversable.</summary>
 /// <param name="Query">The ABlock in question.</param>
 /// <returns>False if this block has an occupant or is a EType::MOUNTAIN or EType::WATER.</returns>
@@ -148,18 +150,13 @@ bool UMW::IsBlockTraversable(ABlock* Query)
 	return !(Query->Occupant || Query->Type == EType::MOUNTAIN || Query->Type == EType::WATER);
 }
 
+
 /// <summary>Compute and determine the AI for Warriors->Affiliation == EAffiliation::AI.</summary>
 void UMW::RunAI()
 {
 	DetermineMoves();
 }
 
-/// <summary>UE_LOG's Message to the Output Log with Warning Verbosity.</summary>
-/// <param name="Message">The FString to display.</param>
-void UMW::Log(FString Message)
-{
-	UE_LOG(LogTemp, Warning, TEXT("%s"), *Message);
-}
 
 void UMW::DetermineMoves()
 {
@@ -194,3 +191,12 @@ void UMW::DetermineMoves()
 		//Moves.Add(TPair<AWarrior*, ABlock*>(Evaluating, Traversable.Last()));
 	}
 }
+
+
+/// <summary>UE_LOG's Message to the Output Log with Warning Verbosity.</summary>
+/// <param name="Message">The FString to display.</param>
+void UMW::Log(FString Message)
+{
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *Message);
+}
+

@@ -5,6 +5,7 @@
 #include "MouseController.h"
 #include "MW.h"
 
+
 // Sets default values
 ABlock::ABlock()
 {
@@ -16,6 +17,7 @@ ABlock::ABlock()
 	HumanAttacked = 0;
 }
 
+
 // Called when the game starts or when spawned
 void ABlock::BeginPlay()
 {
@@ -24,6 +26,7 @@ void ABlock::BeginPlay()
 
 	SetTraversableVisibility(false);
 }
+
 
 // Predict the future movement of the NearestHeuristic's closest Warrior, limited by Depth.
 TArray<ABlock*> ABlock::ComputeTrajectory(ABlock* NearestHeuristic, uint8 Depth)
@@ -93,11 +96,13 @@ TArray<ABlock*> ABlock::ComputeTrajectory(ABlock* NearestHeuristic, uint8 Depth)
 	return PossibleTrajectory;
 }
 
+
 // Called using blueprint OnMouseClicked.
 void ABlock::OnBlockClicked()
 {
 	AMouseController::BlockClicked(this);
 }
+
 
 // What happens if this block is marked as being selected.
 void ABlock::Selected(bool bSelected)
@@ -112,6 +117,7 @@ void ABlock::Selected(bool bSelected)
 	// Show the white tiles?
 	SetTraversableVisibility(bSelected);
 }
+
 
 // Identical to C#'s IComparable<ABlock> CompareTo(ABlock*) override; See /SOUTHLAND.
 int ABlock::CompareTo(ABlock* Comparison)
@@ -149,6 +155,7 @@ int ABlock::CompareTo(ABlock* Comparison)
 	return Compare;
 }
 
+
 // Get neighbour at a clockwise Orientation.
 ABlock* ABlock::Get(uint8 Orientation) const
 {
@@ -169,6 +176,7 @@ ABlock* ABlock::Get(uint8 Orientation) const
 	}
 }
 
+
 // Get Warrior-traversable blocks and visually marks them for selection.
 TArray<ABlock*> ABlock::GetTraversableBlocks()
 {
@@ -188,6 +196,20 @@ TArray<ABlock*> ABlock::GetTraversableBlocks()
 	return Blocks;
 }
 
+
+// Get this block's neighbours.
+TArray<ABlock*> ABlock::GetNeighbours() const
+{
+	TArray<ABlock*> Neighbours;
+
+	for (int i = 0; i < 8; ++i)
+		if (Get(i))
+			Neighbours.Add(Get(i));
+
+	return Neighbours;
+}
+
+
 // A depth-limited BFS, whilst considering occupants.
 TArray<ABlock*> ABlock::SearchAtDepth(uint8 Depth, const bool& bIgnoreOccupants)
 {
@@ -198,6 +220,7 @@ TArray<ABlock*> ABlock::SearchAtDepth(uint8 Depth, const bool& bIgnoreOccupants)
 	return Result;
 }
 
+
 // Searches for blocks at Depth.
 void ABlock::SearchDepthInitialise(TArray<ABlock*>& Blocks, uint8 Depth, const bool& bIgnoreOccupants)
 {
@@ -207,6 +230,7 @@ void ABlock::SearchDepthInitialise(TArray<ABlock*>& Blocks, uint8 Depth, const b
 
 	SearchDepthLogic(Blocks, Depth, Visited, Breadth, bIgnoreOccupants);
 }
+
 
 // The implementation of BFS at depth, whilst considering occupants.
 void ABlock::SearchDepthLogic(TArray<ABlock*>& Blocks, uint8 Depth, TSet<ABlock*>& Visited, TQueue<ABlock*>& Breadth, const bool& bIgnoreOccupants)
@@ -266,17 +290,6 @@ void ABlock::SearchDepthLogic(TArray<ABlock*>& Blocks, uint8 Depth, TSet<ABlock*
 	SearchDepthLogic(Blocks, Depth - 1, Visited, NextDepthQueue, bIgnoreOccupants);
 }
 
-// Get this block's neighbours.
-TArray<ABlock*> ABlock::GetNeighbours() const
-{
-	TArray<ABlock*> Neighbours;
-
-	for (int i = 0; i < 8; ++i)
-		if (Get(i))
-			Neighbours.Add(Get(i));
-
-	return Neighbours;
-}
 
 /// <summary>Gets any warrior that is in-range of this block.</summary>
 /// <param name="RelativeTo">Finds opposing affiliations, relative to this Affiliation.</param>
@@ -302,6 +315,7 @@ TArray<AWarrior*> ABlock::SurroundingEnemiesInRange(EAffiliation RelativeTo)
 	return Enemies;
 }
 
+
 // Is this block directly next to the opposition RelativeTo.
 bool ABlock::IsNextToAffiliation(const EAffiliation& RelativeTo)
 {
@@ -326,6 +340,7 @@ bool ABlock::IsNextToAffiliation(const EAffiliation& RelativeTo)
 
 	return false;
 }
+
 
 /// <summary>Deduct the attacking heuristic.</summary>
 /// <param name="DeductingAffiliation">The Affiliation to deduct from.</param>
@@ -361,6 +376,7 @@ void ABlock::DeductAttacks(EAffiliation DeductingAffiliation)
 		}
 	}
 }
+
 
 /// <summary>Append the attacking heuristic.</summary>
 /// <param name="DeductingAffiliation">The Affiliation to append to.</param>

@@ -88,9 +88,6 @@ private:
 	const FVector WarriorScale = FVector(.5f, .5f, 1.5f);
 
 
-	FVector DirectionToPath;
-	void MoveTowards();
-
 	// Retreat.
 	ABlock* FindSafestBlock();
 

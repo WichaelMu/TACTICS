@@ -10,6 +10,7 @@
 #include "DrawDebugHelpers.h"
 #include "MW.h"
 
+
 // Sets default values
 AWarrior::AWarrior()
 {
@@ -43,6 +44,7 @@ AWarrior::AWarrior()
 	
 }
 
+
 // Called when the game starts or when spawned
 void AWarrior::BeginPlay()
 {
@@ -52,6 +54,7 @@ void AWarrior::BeginPlay()
 	Health = 20;
 }
 
+
 // Called every frame
 void AWarrior::Tick(float DeltaTime)
 {
@@ -59,11 +62,13 @@ void AWarrior::Tick(float DeltaTime)
 
 }
 
+
 // Positive = AI advantage. Negative = Human advantage. 0 = Equal material.
 int32 AWarrior::EvaluateMap()
 {
 	return NumberOfAI - NumberOfHuman;
 }
+
 
 // When this warrior is spawned into the world.
 void AWarrior::OnSpawn(ABlock* SpawnedBlock, EAffiliation TeamAffiliation)
@@ -88,6 +93,34 @@ void AWarrior::OnSpawn(ABlock* SpawnedBlock, EAffiliation TeamAffiliation)
 	}
 }
 
+
+// Update block information when moving between blocks.
+void AWarrior::UpdateBlock(ABlock* NewBlock)
+{
+	PreviousBlock = CurrentBlock;
+
+	CurrentBlock->Occupant = nullptr;
+
+	UpdateBlockAttacks(CurrentBlock, NewBlock);
+
+	NewBlock->Occupant = this;
+	CurrentBlock = NewBlock;
+}
+
+
+// Update the attack references on the block.
+void AWarrior::UpdateBlockAttacks(ABlock* From, ABlock* To)
+{
+	// Prevent deducting attacks On Spawn.
+	if (From != To)
+	{
+		From->DeductAttacks(Affiliation);
+	}
+
+	To->AppendAttacks(Affiliation);
+}
+
+
 // Move this warrior to TargetBlock.
 void AWarrior::MoveTo(ABlock* TargetBlock)
 {
@@ -104,69 +137,6 @@ void AWarrior::MoveTo(ABlock* TargetBlock)
 	UpdateBlock(TargetBlock);
 }
 
-// Update block information when moving between blocks.
-void AWarrior::UpdateBlock(ABlock* NewBlock)
-{
-	PreviousBlock = CurrentBlock;
-
-	CurrentBlock->Occupant = nullptr;
-
-	UpdateBlockAttacks(CurrentBlock, NewBlock);
-
-	NewBlock->Occupant = this;
-	CurrentBlock = NewBlock;
-}
-
-// Update the attack references on the block.
-void AWarrior::UpdateBlockAttacks(ABlock* From, ABlock* To)
-{
-	// Prevent deducting attacks On Spawn.
-	if (From != To)
-	{
-		From->DeductAttacks(Affiliation);
-	}
-
-	To->AppendAttacks(Affiliation);
-}
-
-// Revive some health.
-int AWarrior::Revive()
-{
-	int NewHealth = FMath::Min<int>(Health + 1, 20);
-	Health = NewHealth;
-	return NewHealth;
-}
-
-// Has the health fallen below zero?
-bool AWarrior::HealthIsFatal()
-{
-	return Health <= 0;
-}
-
-// Disassociate this warrior as part of Poly.
-void AWarrior::KillThisWarrior()
-{
-	// Deregister this Warrior as part of all warriors.
-	UMapMaker::Instance->AllWarriors.Remove(this);
-	
-	// Move this warrior somewhere out of the screen.
-	SetActorLocation(FVector(40000.f));
-
-	// Deregister the Current Block's attacks and occupant.
-	CurrentBlock->DeductAttacks(Affiliation);
-	CurrentBlock->Occupant = nullptr;
-	CurrentBlock = nullptr;
-
-	// Reduce the number of Affiliation members.
-	if (Affiliation == EAffiliation::HUMAN)
-	{
-		NumberOfHuman--;
-	}
-	else
-	{
-		NumberOfAI--;
-	}
-}
 
 // Move towards Relative, accounting for traversable blocks and pathfinding.
 ABlock* AWarrior::MoveTowardsBlock(ABlock* Relative)
@@ -210,6 +180,16 @@ ABlock* AWarrior::MoveTowardsBlock(ABlock* Relative)
 	return Towards;
 }
 
+
+// Revive some health.
+int AWarrior::Revive()
+{
+	int NewHealth = FMath::Min<int>(Health + 1, 20);
+	Health = NewHealth;
+	return NewHealth;
+}
+
+
 // Take damage.
 void AWarrior::DeductHealth()
 {
@@ -221,54 +201,81 @@ void AWarrior::DeductHealth()
 	}
 }
 
-// Gets every ABlock around CurrentBlock if it is occupied and the occupant is the opposition.
-TArray<AWarrior*> AWarrior::GetAttackableWarriors()
+
+// Has the health fallen below zero?
+bool AWarrior::HealthIsFatal()
 {
-	TArray<AWarrior*> Attackable;
-
-	if (CurrentBlock)
-	{
-		for (int32 i = 0; i < 8; ++i)
-		{
-			ABlock* Neighbour = CurrentBlock->Get(i);
-			if (Neighbour)
-			{
-				AWarrior* SurroundingOccupant = Neighbour->Occupant;
-				if (SurroundingOccupant)
-				{
-					if (SurroundingOccupant->Affiliation != Affiliation)
-					{
-						Attackable.Add(SurroundingOccupant);
-					}
-				}
-			}
-		}
-	}
-
-	return Attackable;
+	return Health <= 0;
 }
+
+
+// Disassociate this warrior as part of Poly.
+void AWarrior::KillThisWarrior()
+{
+	// Deregister this Warrior as part of all warriors.
+	UMapMaker::Instance->AllWarriors.Remove(this);
+
+	// Move this warrior somewhere out of the screen.
+	SetActorLocation(FVector(40000.f));
+
+	// Deregister the Current Block's attacks and occupant.
+	CurrentBlock->DeductAttacks(Affiliation);
+	CurrentBlock->Occupant = nullptr;
+	CurrentBlock = nullptr;
+
+	// Reduce the number of Affiliation members.
+	if (Affiliation == EAffiliation::HUMAN)
+	{
+		NumberOfHuman--;
+	}
+	else
+	{
+		NumberOfAI--;
+	}
+}
+
 
 void AWarrior::Retreat()
 {
 	MoveTo(FindSafestBlock());
 }
 
+
 void AWarrior::Attack()
 {
 	MoveTo(FindKillableHuman());
 }
 
+
 void AWarrior::Search()
 {
-	MoveTo(ConcentrationOfHumans());
+	MoveTo(MoveTowardsBlock((ConcentrationOfHumans())));
 }
+
+
+ABlock* AWarrior::ConcentrationOfHumans()
+{
+	if (!UMapMaker::HumanConcentration)
+	{
+		UMapMaker::GenerateLargestConcentrationOfHumans();
+	}
+
+	ABlock* HumanHeatmap = UMapMaker::HumanConcentration;
+
+	return HumanHeatmap;
+}
+
+
+// Retreat.
+
 
 ABlock* AWarrior::FindSafestBlock()
 {
 	TArray<AWarrior*> NearbyEnemies = CurrentBlock->SurroundingEnemiesInRange(Affiliation);
 
 	// If there are no enemies in the range of 1 ply, or if the health is critical, Revive.
-	if (NearbyEnemies.Num() == 0 && Health <= 4) {
+	if (NearbyEnemies.Num() == 0 && Health <= 4)
+	{
 		Revive();
 		return CurrentBlock;
 	}
@@ -297,10 +304,14 @@ ABlock* AWarrior::FindSafestBlock()
 			MinimalHumans = Block;
 		}
 	}
-	
+
 	// Prioritise going towards AI if there are more of them, otherwise, go towards the place with minimal humans.
 	return MaxAI > MinHuman ? MaximumAI : MinimalHumans;
 }
+
+
+// Attack.
+
 
 ABlock* AWarrior::FindKillableHuman()
 {
@@ -368,7 +379,7 @@ ABlock* AWarrior::FindKillableHuman()
 			// Otherwise, cohesion with group of AI.
 			return MoveTowardsBlock(ConcentrationOfAI());
 		}
-		
+
 		// If AI has 2 more warriors than Human:
 		if (Evaluation >= 2)
 		{
@@ -388,6 +399,7 @@ ABlock* AWarrior::FindKillableHuman()
 	ABlock* BestMove = MoveTowardsBlock(FindNearestAffiliation(EAffiliation::HUMAN));
 	return BestMove;
 }
+
 
 // Flanks position.
 ABlock* AWarrior::Flank(ABlock* Position)
@@ -426,17 +438,6 @@ ABlock* AWarrior::Flank(ABlock* Position)
 	return FlankRoute.Last();
 }
 
-ABlock* AWarrior::ConcentrationOfHumans()
-{
-	if (!UMapMaker::HumanConcentration)
-	{
-		UMapMaker::GenerateLargestConcentrationOfHumans();
-	}
-
-	ABlock* HumanHeatmap = UMapMaker::HumanConcentration;
-
-	return HumanHeatmap;
-}
 
 ABlock* AWarrior::ConcentrationOfAI()
 {
@@ -461,7 +462,8 @@ ABlock* AWarrior::FindNearestAffiliation(const EAffiliation& Nearest)
 	}
 
 	// AI has lost. Do not continue.
-	if (NumberOfAI <= 0) {
+	if (NumberOfAI <= 0)
+	{
 		UMW::Log("NUMBER OF AI IS ZERO");
 		return CurrentBlock;
 	}
@@ -505,6 +507,7 @@ ABlock* AWarrior::FindNearestAffiliation(const EAffiliation& Nearest)
 	return Nearest == EAffiliation::HUMAN ? ConcentrationOfHumans() : ConcentrationOfAI();
 }
 
+
 void AWarrior::DealDamage()
 {
 	TArray<AWarrior*> SurroundingWarriors = GetAttackableWarriors();
@@ -516,9 +519,30 @@ void AWarrior::DealDamage()
 	}
 }
 
-void AWarrior::MoveTowards()
+// Gets every ABlock around CurrentBlock if it is occupied and the occupant is the opposition.
+TArray<AWarrior*> AWarrior::GetAttackableWarriors()
 {
-	UE_LOG(LogTemp, Warning, TEXT("MOVING"));
-	SetActorLocation(DirectionToPath);
+	TArray<AWarrior*> Attackable;
+
+	if (CurrentBlock)
+	{
+		for (int32 i = 0; i < 8; ++i)
+		{
+			ABlock* Neighbour = CurrentBlock->Get(i);
+			if (Neighbour)
+			{
+				AWarrior* SurroundingOccupant = Neighbour->Occupant;
+				if (SurroundingOccupant)
+				{
+					if (SurroundingOccupant->Affiliation != Affiliation)
+					{
+						Attackable.Add(SurroundingOccupant);
+					}
+				}
+			}
+		}
+	}
+
+	return Attackable;
 }
 
