@@ -13,7 +13,7 @@ ABlock::ABlock()
 	PrimaryActorTick.bCanEverTick = false;
 
 
-	AIAttacked = 0;
+	AIAttacked    = 0;
 	HumanAttacked = 0;
 }
 

@@ -22,27 +22,27 @@ UMapMaker::UMapMaker()
 
 	Roughness = .15f;
 
-	FalloffBias = 4.4f;
+	FalloffBias   = 4.4f;
 	CurveStrength = 3.f;
 
-	SplitLimit = .43f;
-	SplitDistance = .15f;
+	SplitLimit     = .43f;
+	SplitDistance  = .15f;
 	SplitRoughness = .06f;
 
-	WaterLimits = .15f;
-	ShallowLimits = .2f;
-	SandLimits = .4f;
-	GrassLimits = .6f;
-	StoneLimits = .65f;
+	WaterLimits    = .15f;
+	ShallowLimits  = .2f;
+	SandLimits     = .4f;
+	GrassLimits    = .6f;
+	StoneLimits    = .65f;
 	MountainLimits = 1.f;
 
-	EquatorBias = 10.f;
-	EquatorStrength = 15.f;
-	EquatorSpread = .45f;
+	EquatorBias	 = 10.f;
+	EquatorStrength  = 15.f;
+	EquatorSpread	 = .45f;
 	EquatorRoughness = .15f;
 
 	IterationsBeforeRejection = 30;
-	MinimumDistance = 3;
+	MinimumDistance		  = 3;
 }
 
 
