@@ -40,8 +40,8 @@ UMapMaker::UMapMaker()
 	EquatorSpread = .45f;
 	EquatorRoughness = .15f;
 
-	IterationsBeforeRejection = 60;
-	MinimumDistance = 4;
+	IterationsBeforeRejection = 30;
+	MinimumDistance = 3;
 }
 
 
@@ -325,6 +325,7 @@ void UMapMaker::SpawnWarriors()
 	AWarrior::NumberOfHuman = NumberOfWarriors;
 }
 
+// Gets a block either MinimumDistance apart from another Warrior, or a random block on failure.
 ABlock* UMapMaker::GetPoissonOrRandomBlock()
 {
 	ABlock* PoissonSpawnPoint = nullptr;
@@ -334,8 +335,10 @@ ABlock* UMapMaker::GetPoissonOrRandomBlock()
 		PoissonSpawnPoint = UPoissonDisc::Sample(this, IterationsBeforeRejection, MinimumDistance);
 	}
 
+	// If Poisson Disc Sampling failed.
 	if (!PoissonSpawnPoint)
 	{
+		// Find a random block.
 		do
 		{
 			PoissonSpawnPoint = RandomBlock();
