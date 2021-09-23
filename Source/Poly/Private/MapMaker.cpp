@@ -258,9 +258,9 @@ void UMapMaker::ConnectBlocks()
 	if (NumberOfWarriors == 0) { return; }
 
 	// Connect neighbours.
-	for (int y = 0; y < YMap; ++y)
+	for (uint16 y = 0; y < YMap; ++y)
 	{
-		for (int x = 0; x < XMap; ++x)
+		for (uint16 x = 0; x < XMap; ++x)
 		{
 			uint16 Index = y * XMap + x;
 
@@ -290,6 +290,11 @@ void UMapMaker::ConnectBlocks()
 			//	West
 			if (IsIndexInMapRange(x + 1, y    , Index)) { Map[Index]->West		= Map[ Index + 1];		}
 		}
+	}
+
+	if (bGeneratePoisson)
+	{
+		PoissonDisc();
 	}
 }
 
@@ -587,5 +592,34 @@ TArray<int> UMapMaker::ComputeEquator()
 
 	// The Index values of blocks that make up the Equator.
 	return Equator;
+}
+
+void UMapMaker::PoissonDisc()
+{
+	TSet<int32> Occupied;
+
+	for (uint16 i = 0; i < IterationsBeforeRejection && i < ((XMap * YMap * .5f) / MinimumDistance); ++i)
+	{
+		ABlock* RandomBlock = this->RandomBlock();
+
+		if (!UMW::IsBlockTraversable(RandomBlock))
+		{
+			continue;
+		}
+
+		if (Occupied.Contains(RandomBlock->Index))
+		{
+			UMW::Log("WAS MARKED TRUE AHHA");
+			continue;
+		}
+
+		TArray<ABlock*> SurroundingBlocks = RandomBlock->SearchAtDepth(MinimumDistance);
+		for (ABlock* Surrounding : SurroundingBlocks)
+		{
+			Occupied.Add(Surrounding->Index);
+		}
+
+		GetWorld()->SpawnActor<AActor>(ActorToSpawn, RandomBlock->GetWarriorPosition(), FRotator::ZeroRotator);
+	}
 }
 

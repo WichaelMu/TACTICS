@@ -35,14 +35,16 @@ public:
 
 
 	UPROPERTY(EditInstanceOnly)
-		int XMap = 10;
+		uint16 XMap = 10;
 	UPROPERTY(EditInstanceOnly)
-		int YMap = 10;
+		uint16 YMap = 10;
 
 
 protected:
 
-
+	/*
+	* Falloff settings.
+	*/
 	UPROPERTY(EditInstanceOnly, Category = "Terrain|Falloff")
 		bool bUseFalloffMap;
 	/*Centre falloff modification. Higher = More land.*/
@@ -52,7 +54,9 @@ protected:
 	UPROPERTY(EditInstanceOnly, Category = "Terrain|Falloff")
 		float CurveStrength;
 
-
+	/*
+	* Continents settings.
+	*/
 	UPROPERTY(EditInstanceOnly, Category = "Terrain|Continents")
 		bool bGenerateContinents;
 	/*The limit of Perlin Noise to begin splitting up the landmass. Higher = Large oceans.*/
@@ -65,6 +69,9 @@ protected:
 	UPROPERTY(EditInstanceOnly, Category = "Terrain|Continents", meta = (UIMin = "0", UIMax = "0.1", ClampMin = "0", ClampMax = "0.1"))
 		float SplitRoughness;
 
+	/*
+	* Equator settings.
+	*/
 	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
 		bool bComputeEquatorialEnvironment;
 	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
@@ -79,6 +86,18 @@ protected:
 		float EquatorRoughness;
 	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
 		TSubclassOf<ABlock> Desert;
+
+	/*
+	* Poisson Disc Sampling settings.
+	*/
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Poisson Disc Sampling")
+		bool bGeneratePoisson;
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Poisson Disc Sampling")
+		uint16 IterationsBeforeRejection;
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Poisson Disc Sampling")
+		uint8 MinimumDistance;
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Poisson Disc Sampling")
+		TSubclassOf<AActor> ActorToSpawn;
 
 
 	UPROPERTY(EditInstanceOnly, Category = Terrain)
@@ -135,6 +154,8 @@ private:
 	bool IsIndexInMapRange(const uint16& X, const uint16& Y, const uint16& Index) const;
 
 	TArray<int> ComputeEquator();
+	void PoissonDisc();
+
 };
 
 UMapMaker* UMapMaker::Instance = nullptr;

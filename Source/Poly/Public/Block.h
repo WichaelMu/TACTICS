@@ -34,7 +34,7 @@ public:
 
 
 	UPROPERTY(VisibleAnywhere)
-		int Index = -1;
+		int32 Index = -1;
 
 	UPROPERTY(VisibleAnywhere)
 		int AIAttacked;
