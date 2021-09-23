@@ -166,7 +166,8 @@ int UMapMaker::MapMidPoint()
 
 void UMapMaker::PlaceBlocks()
 {
-	float Scale = FMath::RandRange(-10000.f, 10000.f);
+	float Offset = FMath::RandRange(-10000.f, 10000.f);
+	UMW::Log("Terrain Seed: " + FString::SanitizeFloat(Offset) + " at " + FString::SanitizeFloat(Roughness) + " Roughness.");
 
 	// Should Map Maker generate a Falloff Map?
 	TArray<float> FalloffMap;
@@ -196,7 +197,7 @@ void UMapMaker::PlaceBlocks()
 		{
 			int Position = y * XMap + x;
 
-			float Perlin = FMath::PerlinNoise2D(FVector2D(x + Scale, y + Scale) * Roughness);
+			float Perlin = FMath::PerlinNoise2D(FVector2D(x + Offset, y + Offset) * Roughness);
 
 			// Set Perlin to be between 0 and 1.
 			Perlin = (Perlin + 1) / 2;
@@ -402,7 +403,8 @@ TArray<float> UMapMaker::GenerateContinents()
 	// Initialise to all zeroes.
 	Continents.Init(0, XMap * YMap);
 
-	float Scale = FMath::RandRange(-10000.f, 10000.f);
+	float Offset = FMath::RandRange(-10000.f, 10000.f);
+	UMW::Log("Continents Seed: " + FString::SanitizeFloat(Offset) + " at " + FString::SanitizeFloat(SplitRoughness) + " Roughness");
 
 	for (int y = 0; y < YMap; ++y)
 	{
@@ -411,7 +413,7 @@ TArray<float> UMapMaker::GenerateContinents()
 			int Position = y * XMap + x;
 
 			// Get Perlin Noise value at these coordiantes.
-			float Perlin = FMath::PerlinNoise2D(FVector2D(x + Scale, y + Scale) * SplitRoughness);
+			float Perlin = FMath::PerlinNoise2D(FVector2D(x + Offset, y + Offset) * SplitRoughness);
 
 			// Clamp between 0 and 1.
 			Perlin = (Perlin + 1) / 2;
@@ -477,7 +479,8 @@ TArray<int> UMapMaker::ComputeEquator()
 	TArray<FVector2D> PrimeMeridian;
 	PrimeMeridian.Add(FVector2D(MX, MY));
 
-	float Scale = FMath::RandRange(-10000.f, 10000.f);
+	float Offset = FMath::RandRange(-10000.f, 10000.f);
+	UMW::Log("Equator Seed: " + FString::SanitizeFloat(Offset) + " at " + FString::SanitizeFloat(EquatorRoughness) + " Equator Roughness");
 	
 	// Compute the bounds North (and North West) of the Equator, limited by Equator Influence.
 	for (int i = 0; i < EquatorInfluence; ++i)
@@ -557,7 +560,7 @@ TArray<int> UMapMaker::ComputeEquator()
 
 			if (!Equator.Contains(Position))
 			{
-				float Perlin = FMath::PerlinNoise2D(FVector2D(NE.X + Scale, NE.Y + Scale) * EquatorRoughness);
+				float Perlin = FMath::PerlinNoise2D(FVector2D(NE.X + Offset, NE.Y + Offset) * EquatorRoughness);
 				Perlin = (Perlin + 1) / 2;
 
 				// If the Perlin Noise value qualifies as a point in the Equator, mark it as part of the Equator.
@@ -587,7 +590,7 @@ TArray<int> UMapMaker::ComputeEquator()
 
 			if (!Equator.Contains(Position))
 			{
-				float Perlin = FMath::PerlinNoise2D(FVector2D(SW.X + Scale, SW.Y + Scale) * EquatorRoughness);
+				float Perlin = FMath::PerlinNoise2D(FVector2D(SW.X + Offset, SW.Y + Offset) * EquatorRoughness);
 				Perlin = (Perlin + 1) / 2;
 
 				// If the Perlin Noise value qualifies as a point in the Equator, mark it as part of the Equator.

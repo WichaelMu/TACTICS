@@ -11,7 +11,7 @@ class ABlock;
 class UMoves;
 
 /**
- * Pathfinding.
+ * Pathfinding, AI and other helper functions for Poly.
  */
 UCLASS()
 class POLY_API UMW : public UBlueprintFunctionLibrary
