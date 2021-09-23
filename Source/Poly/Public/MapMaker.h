@@ -90,14 +90,12 @@ protected:
 	/*
 	* Poisson Disc Sampling settings.
 	*/
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Poisson Disc Sampling")
-		bool bGeneratePoisson;
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Poisson Disc Sampling")
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Poisson Disc Sampling for Warrior Spawning")
+		bool bGeneratePoissonSpawning;
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Poisson Disc Sampling for Warrior Spawning")
 		uint16 IterationsBeforeRejection;
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Poisson Disc Sampling")
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Poisson Disc Sampling for Warrior Spawning")
 		uint8 MinimumDistance;
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Poisson Disc Sampling")
-		TSubclassOf<AActor> ActorToSpawn;
 
 
 	UPROPERTY(EditInstanceOnly, Category = Terrain)
@@ -146,6 +144,8 @@ private:
 	void ConnectBlocks();
 	void SpawnWarriors();
 
+	ABlock* GetPoissonOrRandomBlock();
+
 	TArray<float> GenerateFalloffMap();
 	TArray<float> GenerateContinents();
 	static float Transition(const float&, const float&, const float&);
@@ -154,7 +154,6 @@ private:
 	bool IsIndexInMapRange(const uint16& X, const uint16& Y, const uint16& Index) const;
 
 	TArray<int> ComputeEquator();
-	void PoissonDisc();
 
 };
 

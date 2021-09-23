@@ -78,6 +78,9 @@ void AWarrior::OnSpawn(ABlock* SpawnedBlock, EAffiliation TeamAffiliation)
 		// Change the location of this warrior.
 		SetActorLocation(SpawnedBlock->GetWarriorPosition());
 		UpdateBlock(SpawnedBlock);
+
+		// Defined in blueprint.
+		AssignAffiliationColours();
 	}
 	else
 	{

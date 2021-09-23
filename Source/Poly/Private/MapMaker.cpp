@@ -5,6 +5,7 @@
 #include "Engine/World.h"
 #include "Warrior.h"
 #include "MW.h"
+#include "PoissonDisc.h"
 
 // Sets default values for this component's properties
 UMapMaker::UMapMaker()
@@ -38,6 +39,9 @@ UMapMaker::UMapMaker()
 	EquatorStrength = 15.f;
 	EquatorSpread = .45f;
 	EquatorRoughness = .15f;
+
+	IterationsBeforeRejection = 60;
+	MinimumDistance = 4;
 }
 
 
@@ -291,48 +295,54 @@ void UMapMaker::ConnectBlocks()
 			if (IsIndexInMapRange(x + 1, y    , Index)) { Map[Index]->West		= Map[ Index + 1];		}
 		}
 	}
-
-	if (bGeneratePoisson)
-	{
-		PoissonDisc();
-	}
 }
 
 // Spawns 1 warrior for each affiliation for NumberOfWarrior times.
 void UMapMaker::SpawnWarriors()
 {
+	// Static T template's memory persist. Flush the Poisson Disc occupancy.
+	UPoissonDisc::Flush();
+
 	// Spawn warriors.
 	for (int i = 0; i < NumberOfWarriors; ++i)
 	{
-		ABlock* RandomWarriorSpawnPoint = RandomBlock();
-
-		while (!UMW::IsBlockTraversable(RandomWarriorSpawnPoint))
-		{
-			RandomWarriorSpawnPoint = RandomBlock();
-		}
-
 		// Spawn 1 warrior, for each team, given NumberOfWarriors.
 
+		ABlock* PoissonSpawnPoint = GetPoissonOrRandomBlock();
+
 		AWarrior* SpawnedWarrior1 = GetWorld()->SpawnActor<AWarrior>(Warrior, FVector::ZeroVector, FRotator::ZeroRotator);
-		SpawnedWarrior1->OnSpawn(RandomWarriorSpawnPoint, EAffiliation::HUMAN);
-		// Defined in blueprint.
-		SpawnedWarrior1->AssignAffiliationColours();
+		SpawnedWarrior1->OnSpawn(PoissonSpawnPoint, EAffiliation::HUMAN);
 		AllWarriors.Add(SpawnedWarrior1);
 
-		while (!UMW::IsBlockTraversable(RandomWarriorSpawnPoint))
-		{
-			RandomWarriorSpawnPoint = RandomBlock();
-		}
+		PoissonSpawnPoint = GetPoissonOrRandomBlock();
 
 		AWarrior* SpawnedWarrior2 = GetWorld()->SpawnActor<AWarrior>(Warrior, FVector::ZeroVector, FRotator::ZeroRotator);
-		SpawnedWarrior2->OnSpawn(RandomWarriorSpawnPoint, EAffiliation::AI);
-		// Defined in blueprint.
-		SpawnedWarrior2->AssignAffiliationColours();
+		SpawnedWarrior2->OnSpawn(PoissonSpawnPoint, EAffiliation::AI);
 		AllWarriors.Add(SpawnedWarrior2);
 	}
 
 	AWarrior::NumberOfAI = NumberOfWarriors;
 	AWarrior::NumberOfHuman = NumberOfWarriors;
+}
+
+ABlock* UMapMaker::GetPoissonOrRandomBlock()
+{
+	ABlock* PoissonSpawnPoint = nullptr;
+	
+	if (bGeneratePoissonSpawning)
+	{
+		PoissonSpawnPoint = UPoissonDisc::Sample(this, IterationsBeforeRejection, MinimumDistance);
+	}
+
+	if (!PoissonSpawnPoint)
+	{
+		do
+		{
+			PoissonSpawnPoint = RandomBlock();
+		} while (!UMW::IsBlockTraversable(PoissonSpawnPoint));
+	}
+
+	return PoissonSpawnPoint;
 }
 
 // Generates a Falloff Map. (A Map surrounded by Water/Shallow; an island).
@@ -592,34 +602,5 @@ TArray<int> UMapMaker::ComputeEquator()
 
 	// The Index values of blocks that make up the Equator.
 	return Equator;
-}
-
-void UMapMaker::PoissonDisc()
-{
-	TSet<int32> Occupied;
-
-	for (uint16 i = 0; i < IterationsBeforeRejection && i < ((XMap * YMap * .5f) / MinimumDistance); ++i)
-	{
-		ABlock* RandomBlock = this->RandomBlock();
-
-		if (!UMW::IsBlockTraversable(RandomBlock))
-		{
-			continue;
-		}
-
-		if (Occupied.Contains(RandomBlock->Index))
-		{
-			UMW::Log("WAS MARKED TRUE AHHA");
-			continue;
-		}
-
-		TArray<ABlock*> SurroundingBlocks = RandomBlock->SearchAtDepth(MinimumDistance);
-		for (ABlock* Surrounding : SurroundingBlocks)
-		{
-			Occupied.Add(Surrounding->Index);
-		}
-
-		GetWorld()->SpawnActor<AActor>(ActorToSpawn, RandomBlock->GetWarriorPosition(), FRotator::ZeroRotator);
-	}
 }
 
