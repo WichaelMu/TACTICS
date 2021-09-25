@@ -35,9 +35,12 @@ public:
 
 
 	UPROPERTY(EditInstanceOnly)
-		uint16 XMap = 10;
+		uint16 XMap;
 	UPROPERTY(EditInstanceOnly)
-		uint16 YMap = 10;
+		uint16 YMap;
+
+
+	static void UpdatePosition(const FVector2D& Position);
 
 
 protected:
@@ -140,6 +143,7 @@ private:
 	static int MapMidPoint();
 
 	void PlaceBlocks();
+	void EvaluateBlockType(const float& Perlin, const int& X, const int& Y);
 	ABlock* SpawnBlock(UClass* Class, const int& X, const int& Y, EType TerrainType);
 	void ConnectBlocks();
 	void SpawnWarriors();
@@ -155,6 +159,12 @@ private:
 
 	TArray<int> ComputeEquator();
 
+
+	float TerrainOffset;
+	FVector2D CameraPosition;
+	void UpdateChunks();
+	uint16 XExtent;
+	uint16 YExtent;
 };
 
 UMapMaker* UMapMaker::Instance = nullptr;

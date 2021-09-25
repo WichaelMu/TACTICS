@@ -63,6 +63,9 @@ void UMapMaker::BeginPlay()
 		return;
 	}
 
+	XExtent = XMap - 1;
+	YExtent = YMap - 1;
+
 	PlaceBlocks();
 	ConnectBlocks();
 	SpawnWarriors();
@@ -165,6 +168,7 @@ void UMapMaker::PlaceBlocks()
 {
 	float Offset = FMath::RandRange(-10000.f, 10000.f);
 	UMW::Log("Terrain Seed: " + FString::SanitizeFloat(Offset) + " at " + FString::SanitizeFloat(Roughness) + " Roughness.");
+	TerrainOffset = Offset;
 
 	// Should Map Maker generate a Falloff Map?
 	TArray<float> FalloffMap;
@@ -211,35 +215,43 @@ void UMapMaker::PlaceBlocks()
 				Perlin -= FalloffMap[Position];
 			}
 
-			if (Perlin < WaterLimits)
-			{
-				SpawnBlock(Water, x, y, EType::WATER);
-			}
-			else if (Perlin < ShallowLimits)
-			{
-				SpawnBlock(Shallow, x, y, EType::WATER);
-			}
-			else if (bComputeEquatorialEnvironment && Perlin < GrassLimits && Equator.Contains(Position))
+			if (bComputeEquatorialEnvironment && Perlin < GrassLimits && Equator.Contains(Position))
 			{
 				SpawnBlock(Desert, x, y, EType::GRASS);
 			}
-			else if (Perlin < SandLimits)
-			{
-				SpawnBlock(Sand, x, y, EType::GRASS);
-			}
-			else if (Perlin < GrassLimits)
-			{
-				SpawnBlock(Grass, x, y, EType::GRASS);
-			}
-			else if (Perlin < StoneLimits)
-			{
-				SpawnBlock(Stone, x, y, EType::STONE);
-			}
 			else
 			{
-				SpawnBlock(Mountain, x, y, EType::MOUNTAIN);
+				EvaluateBlockType(Perlin, x, y);
 			}
 		}
+	}
+}
+
+void UMapMaker::EvaluateBlockType(const float& Perlin, const int& X, const int& Y)
+{
+	if (Perlin < WaterLimits)
+	{
+		SpawnBlock(Water, X, Y, EType::WATER);
+	}
+	else if (Perlin < ShallowLimits)
+	{
+		SpawnBlock(Shallow, X, Y, EType::WATER);
+	}
+	else if (Perlin < SandLimits)
+	{
+		SpawnBlock(Sand, X, Y, EType::GRASS);
+	}
+	else if (Perlin < GrassLimits)
+	{
+		SpawnBlock(Grass, X, Y, EType::GRASS);
+	}
+	else if (Perlin < StoneLimits)
+	{
+		SpawnBlock(Stone, X, Y, EType::STONE);
+	}
+	else
+	{
+		SpawnBlock(Mountain, X, Y, EType::MOUNTAIN);
 	}
 }
 
@@ -623,5 +635,44 @@ ABlock* UMapMaker::RandomBlock()
 	int RandomBlockIndex = FMath::RandRange(0, Map.Num() - 1);
 
 	return Map[RandomBlockIndex];
+}
+
+
+void UMapMaker::UpdatePosition(const FVector2D& Position)
+{
+	Instance->CameraPosition = Position;
+	
+	Instance->UpdateChunks();
+}
+
+void UMapMaker::UpdateChunks()
+{
+	if (CameraPosition.X > (XExtent * 100) || CameraPosition.Y > (YExtent * 100))
+	{
+		XExtent++;
+		YExtent++;
+
+		// Spawn new blocks along the Y-Axis.
+		for (uint16 y = 0; y <= YExtent; ++y)
+		{
+			float Perlin = FMath::PerlinNoise2D(FVector2D(XExtent + TerrainOffset, y + TerrainOffset) * Roughness);
+
+			// Set Perlin to be between 0 and 1.
+			Perlin = (Perlin + 1) / 2;
+
+			EvaluateBlockType(Perlin, XExtent, y);
+		}
+
+		// Spawn new blocks along the X-Axis.
+		for (uint16 x = 0; x <= XExtent; ++x)
+		{
+			float Perlin = FMath::PerlinNoise2D(FVector2D(x + TerrainOffset, YExtent + TerrainOffset) * Roughness);
+
+			// Set Perlin to be between 0 and 1.
+			Perlin = (Perlin + 1) / 2;
+
+			EvaluateBlockType(Perlin, x, YExtent);
+		}
+	}
 }
 

@@ -57,7 +57,10 @@ void AMouseController::Forward(float Throw)
 	ActorForwardYaw.Pitch = 0;
 	ActorForwardYaw.Roll = 0;
 
-	SetActorLocation(GetActorLocation() + ActorForwardYaw.Vector() * Throw * MoveAmplifier * GetWorld()->GetDeltaSeconds());
+	FVector Position = GetActorLocation();
+	SetActorLocation(Position + ActorForwardYaw.Vector() * Throw * MoveAmplifier * GetWorld()->GetDeltaSeconds());
+
+	UMapMaker::UpdatePosition(FVector2D(Position.X, Position.Y));
 }
 
 
@@ -66,7 +69,10 @@ void AMouseController::Forward(float Throw)
 /// <param name="Throw"></param>
 void AMouseController::Right(float Throw)
 {
-	SetActorLocation(GetActorLocation() + GetActorRightVector() * Throw * MoveAmplifier * GetWorld()->GetDeltaSeconds());
+	FVector Position = GetActorLocation();
+	SetActorLocation(Position + GetActorRightVector() * Throw * MoveAmplifier * GetWorld()->GetDeltaSeconds());
+
+	UMapMaker::UpdatePosition(FVector2D(Position.X, Position.Y));
 }
 
 
