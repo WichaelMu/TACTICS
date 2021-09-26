@@ -81,26 +81,21 @@ TArray<ABlock*> UMW::Pathfind(ABlock* Origin, ABlock* Destination)
 {
 	for (ABlock* Block : UMapMaker::Instance->Map) { Block->G = INT_MAX; }
 
+	const uint32 MapSize = UMapMaker::Instance->XMap * UMapMaker::Instance->YMap;
+	
 	TArray<ABlock*> Path;
-	TArray<ABlock*> Open;
+	THeap<ABlock> Open(Origin, MapSize);
+	TSet<ABlock*> Closed;
+
 	Open.Add(Origin);
+
 	Origin->G = 0;
 	Origin->H = FVector::DistSquared(Origin->GetActorLocation(), Destination->GetActorLocation());
-	while (Open.Num() > 0)
+
+	while (Open.Count > 0)
 	{
-		ABlock* Current = Open[0];
-
-		float LowestF = INT_MAX;
-		for (int i = 1; i < Open.Num(); ++i)
-		{
-			if (Open[i]->F < LowestF)
-			{
-				LowestF = Open[i]->F;
-				Current = Open[i];
-			}
-		}
-
-		Open.Remove(Current);
+		ABlock* Current = Open.RemoveFirst();
+		Closed.Add(Current);
 
 		if (Current == Destination)
 		{
@@ -119,21 +114,24 @@ TArray<ABlock*> UMW::Pathfind(ABlock* Origin, ABlock* Destination)
 			ABlock* Query = Current->Get(i);
 			if (Query)
 			{
-				if (IsBlockTraversable(Query))
+				if (!IsBlockTraversable(Query) || Closed.Contains(Query))
 				{
-					float FUpdatedCost = Current->G + FVector::DistSquared(Current->GetActorLocation(), Query->GetActorLocation());
-					if (FUpdatedCost < Query->G)
-					{
-						Query->G = FUpdatedCost;
-						Query->H = FVector::DistSquared(Query->GetActorLocation(), Destination->GetActorLocation());
-						Query->Parent = Current;
+					continue;
+				}
 
-						if (!Open.Contains(Query))
-						{
-							Open.Add(Query);
-						}
+				float FUpdatedCost = Current->G + FVector::DistSquared(Current->GetActorLocation(), Query->GetActorLocation());
+				if (FUpdatedCost < Query->G)
+				{
+					Query->G = FUpdatedCost;
+					Query->H = FVector::DistSquared(Query->GetActorLocation(), Destination->GetActorLocation());
+					Query->Parent = Current;
+
+					if (!Open.Contains(Query))
+					{
+						Open.Add(Query);
 					}
 				}
+				
 			}
 		}
 	}

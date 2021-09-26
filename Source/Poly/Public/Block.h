@@ -15,7 +15,7 @@ UENUM()
 enum class EType { WATER, GRASS, STONE, MOUNTAIN };
 
 UCLASS()
-class POLY_API ABlock : public AActor
+class POLY_API ABlock : public AActor, public THeapItem<ABlock>
 {
 	GENERATED_BODY()
 
@@ -86,13 +86,13 @@ public:
 	// Shortest path to origin via this block.
 	ABlock* Parent;
 	// Comparison of scores between other blocks.
-	int CompareTo(ABlock*);
+	int CompareTo(ABlock*) override;
 
 	// The type of terrain.
 	EType Type;
 
 	// Get this block's neighbour at orientation.
-	ABlock* Get(const uint8& Orientation) const;
+	ABlock* Get(const uint8& Orientation) const override;
 
 	TArray<ABlock*> GetTraversableBlocks();
 	TArray<ABlock*> SearchAtDepth(uint8 Range, const bool& bIgnoreOccupants = true);
