@@ -366,10 +366,10 @@ ABlock* AWarrior::FindKillableHuman()
 			{
 				ABlock* NearestHuman = FindNearestAffiliation(EAffiliation::HUMAN);
 
-				// If the block-distance to NearestHuman is greater than 10. Flank that position.
-				if (UMW::Pathfind(CurrentBlock, NearestHuman).Num() > 10)
+				// If the block-distance to NearestHuman is greater than 6. Flank that position.
+				if (UMW::Pathfind(CurrentBlock, NearestHuman).Num() > 6)
 				{
-					MoveTowardsBlock(Flank(NearestHuman));
+					return MoveTowardsBlock(Flank(NearestHuman));
 				}
 
 				// Go towards NearestHuman.
