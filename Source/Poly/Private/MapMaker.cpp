@@ -215,7 +215,7 @@ void UMapMaker::PlaceBlocks()
 				Perlin -= FalloffMap[Position];
 			}
 
-			if (bComputeEquatorialEnvironment && Perlin < GrassLimits && Equator.Contains(Position))
+			if (bComputeEquatorialEnvironment && Perlin < GrassLimits && Equator.Contains(Position) && Perlin > ShallowLimits)
 			{
 				SpawnBlock(Desert, x, y, EType::GRASS);
 			}
@@ -289,9 +289,10 @@ TArray<float> UMapMaker::GenerateFalloffMap()
 
 			// Which X or Y Falloff is closest to the edge of the map.
 			float ClosestToEdge = FMath::Max(FMath::Abs(XFalloff), FMath::Abs(YFalloff));
+			FalloffValues[Position] = ClosestToEdge;
 
 			// Set the Falloff map as a transition between the value closest to the edge and Transition.
-			FalloffValues[Position] = Transition(ClosestToEdge, CurveStrength, FalloffBias);
+			//FalloffValues[Position] = Transition(ClosestToEdge, CurveStrength, FalloffBias);
 		}
 	}
 
