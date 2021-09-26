@@ -20,14 +20,14 @@ UMapMaker::UMapMaker()
 	Instance = this;
 
 
-	Roughness = .15f;
+	TerrainScale = .15f;
 
 	FalloffBias   = 4.4f;
 	CurveStrength = 3.f;
 
 	SplitLimit     = .43f;
 	SplitDistance  = .15f;
-	SplitRoughness = .06f;
+	SplitScale = .06f;
 
 	WaterLimits    = .15f;
 	ShallowLimits  = .2f;
@@ -39,7 +39,7 @@ UMapMaker::UMapMaker()
 	EquatorBias	 = 10.f;
 	EquatorStrength  = 15.f;
 	EquatorSpread	 = .45f;
-	EquatorRoughness = .15f;
+	EquatorScale = .15f;
 
 	IterationsBeforeRejection = 30;
 	MinimumDistance		  = 3;
@@ -167,7 +167,7 @@ int UMapMaker::MapMidPoint()
 void UMapMaker::PlaceBlocks()
 {
 	float Offset = FMath::RandRange(-10000.f, 10000.f);
-	UMW::Log("Terrain Seed: " + FString::SanitizeFloat(Offset) + " at " + FString::SanitizeFloat(Roughness) + " Roughness.");
+	UMW::Log("Terrain Seed: " + FString::SanitizeFloat(Offset) + " at " + FString::SanitizeFloat(TerrainScale) + " Scale.");
 	TerrainOffset = Offset;
 
 	// Should Map Maker generate a Falloff Map?
@@ -198,7 +198,7 @@ void UMapMaker::PlaceBlocks()
 		{
 			int Position = y * XMap + x;
 
-			float Perlin = FMath::PerlinNoise2D(FVector2D(x + Offset, y + Offset) * Roughness);
+			float Perlin = FMath::PerlinNoise2D(FVector2D(x + Offset, y + Offset) * TerrainScale);
 
 			// Set Perlin to be between 0 and 1.
 			Perlin = (Perlin + 1) / 2;
@@ -289,10 +289,9 @@ TArray<float> UMapMaker::GenerateFalloffMap()
 
 			// Which X or Y Falloff is closest to the edge of the map.
 			float ClosestToEdge = FMath::Max(FMath::Abs(XFalloff), FMath::Abs(YFalloff));
-			FalloffValues[Position] = ClosestToEdge;
 
 			// Set the Falloff map as a transition between the value closest to the edge and Transition.
-			//FalloffValues[Position] = Transition(ClosestToEdge, CurveStrength, FalloffBias);
+			FalloffValues[Position] = Transition(ClosestToEdge, CurveStrength, FalloffBias);
 		}
 	}
 
@@ -310,7 +309,7 @@ TArray<float> UMapMaker::GenerateContinents()
 	Continents.Init(0, XMap * YMap);
 
 	float Offset = FMath::RandRange(-10000.f, 10000.f);
-	UMW::Log("Continents Seed: " + FString::SanitizeFloat(Offset) + " at " + FString::SanitizeFloat(SplitRoughness) + " Roughness");
+	UMW::Log("Continents Seed: " + FString::SanitizeFloat(Offset) + " at " + FString::SanitizeFloat(SplitScale) + " Scale.");
 
 	for (int y = 0; y < YMap; ++y)
 	{
@@ -319,7 +318,7 @@ TArray<float> UMapMaker::GenerateContinents()
 			int Position = y * XMap + x;
 
 			// Get Perlin Noise value at these coordiantes.
-			float Perlin = FMath::PerlinNoise2D(FVector2D(x + Offset, y + Offset) * SplitRoughness);
+			float Perlin = FMath::PerlinNoise2D(FVector2D(x + Offset, y + Offset) * SplitScale);
 
 			// Clamp between 0 and 1.
 			Perlin = (Perlin + 1) / 2;
@@ -361,7 +360,7 @@ TArray<int> UMapMaker::ComputeEquator()
 	PrimeMeridian.Add(FVector2D(MX, MY));
 
 	float Offset = FMath::RandRange(-10000.f, 10000.f);
-	UMW::Log("Equator Seed: " + FString::SanitizeFloat(Offset) + " at " + FString::SanitizeFloat(EquatorRoughness) + " Equator Roughness");
+	UMW::Log("Equator Seed: " + FString::SanitizeFloat(Offset) + " at " + FString::SanitizeFloat(EquatorScale) + " Equator Scale.");
 
 	// Compute the bounds North (and North West) of the Equator, limited by Equator Influence.
 	for (int i = 0; i < EquatorInfluence; ++i)
@@ -441,7 +440,7 @@ TArray<int> UMapMaker::ComputeEquator()
 
 			if (!Equator.Contains(Position))
 			{
-				float Perlin = FMath::PerlinNoise2D(FVector2D(NE.X + Offset, NE.Y + Offset) * EquatorRoughness);
+				float Perlin = FMath::PerlinNoise2D(FVector2D(NE.X + Offset, NE.Y + Offset) * EquatorScale);
 				Perlin = (Perlin + 1) / 2;
 
 				// If the Perlin Noise value qualifies as a point in the Equator, mark it as part of the Equator.
@@ -471,7 +470,7 @@ TArray<int> UMapMaker::ComputeEquator()
 
 			if (!Equator.Contains(Position))
 			{
-				float Perlin = FMath::PerlinNoise2D(FVector2D(SW.X + Offset, SW.Y + Offset) * EquatorRoughness);
+				float Perlin = FMath::PerlinNoise2D(FVector2D(SW.X + Offset, SW.Y + Offset) * EquatorScale);
 				Perlin = (Perlin + 1) / 2;
 
 				// If the Perlin Noise value qualifies as a point in the Equator, mark it as part of the Equator.
@@ -656,7 +655,7 @@ void UMapMaker::UpdateChunks()
 		// Spawn new blocks along the Y-Axis.
 		for (uint16 y = 0; y <= YExtent; ++y)
 		{
-			float Perlin = FMath::PerlinNoise2D(FVector2D(XExtent + TerrainOffset, y + TerrainOffset) * Roughness);
+			float Perlin = FMath::PerlinNoise2D(FVector2D(XExtent + TerrainOffset, y + TerrainOffset) * TerrainScale);
 
 			// Set Perlin to be between 0 and 1.
 			Perlin = (Perlin + 1) / 2;
@@ -667,7 +666,7 @@ void UMapMaker::UpdateChunks()
 		// Spawn new blocks along the X-Axis.
 		for (uint16 x = 0; x <= XExtent; ++x)
 		{
-			float Perlin = FMath::PerlinNoise2D(FVector2D(x + TerrainOffset, YExtent + TerrainOffset) * Roughness);
+			float Perlin = FMath::PerlinNoise2D(FVector2D(x + TerrainOffset, YExtent + TerrainOffset) * TerrainScale);
 
 			// Set Perlin to be between 0 and 1.
 			Perlin = (Perlin + 1) / 2;

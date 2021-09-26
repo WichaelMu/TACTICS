@@ -70,7 +70,7 @@ protected:
 		float SplitDistance;
 	/*How often should these splits occur. Higher = Spots of water.*/
 	UPROPERTY(EditInstanceOnly, Category = "Terrain|Continents", meta = (UIMin = "0", UIMax = "0.1", ClampMin = "0", ClampMax = "0.1"))
-		float SplitRoughness;
+		float SplitScale;
 
 	/*
 	* Equator settings.
@@ -86,7 +86,7 @@ protected:
 	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
 		float EquatorSpread;
 	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
-		float EquatorRoughness;
+		float EquatorScale;
 	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
 		TSubclassOf<ABlock> Desert;
 
@@ -131,7 +131,7 @@ protected:
 		float MountainLimits;
 
 	UPROPERTY(EditInstanceOnly, Category = Terrain)
-		float Roughness;
+		float TerrainScale;
 
 	UPROPERTY(EditInstanceOnly, Category = Players)
 		TSubclassOf<AWarrior> Warrior;
