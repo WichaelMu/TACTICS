@@ -149,7 +149,7 @@ bool UMW::IsBlockTraversable(ABlock* Query)
 }
 
 
-/// <summary>Compute and determine the AI for Warriors->Affiliation == EAffiliation::AI.</summary>
+// Compute and determine the AI for Warriors->Affiliation == EAffiliation::AI.
 void UMW::RunAI()
 {
 	DetermineMoves();
@@ -170,12 +170,6 @@ void UMW::DetermineMoves()
 
 	for (AWarrior* Evaluating : AIWarriors)
 	{
-		// @TODO: If health is low and NOT in attack in 1 ply, revive itself.
-
-		ABlock* CurrentBlock = Evaluating->CurrentBlock;
-		//TArray<ABlock*> Traversable = CurrentBlock->GetTraversableBlocks();
-
-
 		if (Evaluating->Health <= 4)
 		{
 			Evaluating->Retreat();
@@ -184,9 +178,6 @@ void UMW::DetermineMoves()
 		{
 			Evaluating->Attack();
 		}
-
-
-		//Moves.Add(TPair<AWarrior*, ABlock*>(Evaluating, Traversable.Last()));
 	}
 }
 
