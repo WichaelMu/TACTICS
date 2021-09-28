@@ -583,7 +583,7 @@ void UMapMaker::SpawnWarriors()
 	UPoissonDisc::Flush();
 
 	// Spawn warriors.
-	for (int i = 0; i < NumberOfWarriors; ++i)
+	for (uint8 i = 0; i < NumberOfWarriors; ++i)
 	{
 		// Spawn 1 warrior, for each team, given NumberOfWarriors.
 
@@ -602,6 +602,8 @@ void UMapMaker::SpawnWarriors()
 
 	AWarrior::NumberOfAI = NumberOfWarriors;
 	AWarrior::NumberOfHuman = NumberOfWarriors;
+
+	UPoissonDisc::Flush();
 }
 
 
