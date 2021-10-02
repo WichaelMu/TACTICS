@@ -366,8 +366,8 @@ ABlock* AWarrior::FindKillableHuman()
 			{
 				ABlock* NearestHuman = FindNearestAffiliation(EAffiliation::HUMAN);
 
-				// If the block-distance to NearestHuman is greater than 6. Flank that position.
-				if (UMW::Pathfind(CurrentBlock, NearestHuman).Num() > 6)
+				// If the block-distance to NearestHuman is greater than 10. Flank that position.
+				if (UMW::Pathfind(CurrentBlock, NearestHuman).Num() > 10)
 				{
 					return MoveTowardsBlock(Flank(NearestHuman));
 				}
@@ -411,7 +411,7 @@ ABlock* AWarrior::Flank(ABlock* Position)
 		return Position;
 	}
 
-	TArray<ABlock*> FlankRoute = ABlock::ComputeTrajectory(Position, UMapMaker::Instance->XMap / 2);
+	TArray<ABlock*> FlankRoute = ABlock::ComputeTrajectory(Position, UMapMaker::Instance->XMap);
 
 	// The depth or terrain limited length of the trajectory.
 	int32 FlankRouteLength = FlankRoute.Num();
@@ -426,12 +426,15 @@ ABlock* AWarrior::Flank(ABlock* Position)
 	}
 
 	// Half distance is the midpoint for reaching the predicted trajectory.
-	int32 HalfDistance = DistanceToTarget / 2;
+	int32 Time = DistanceToTarget / 2;
 
-	if (FlankRoute.IsValidIndex(HalfDistance))
+	if (Time <= DistanceToTarget)
 	{
-		// Close in on half distance.
-		return FlankRoute[HalfDistance];
+		if (FlankRoute.IsValidIndex(Time))
+		{
+			// Close in on half distance.
+			return FlankRoute[Time];
+		}
 	}
 
 	// Default. Return the last element in the trajectory.
