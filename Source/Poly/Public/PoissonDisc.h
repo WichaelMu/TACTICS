@@ -23,6 +23,7 @@ public:
 
 	static void Flush();
 	static ABlock* Sample(UMapMaker* MapMaker, const uint16& IterationsBeforeRejection, const uint8& MinimumDistance);
+	static void Print();
 
 
 private:

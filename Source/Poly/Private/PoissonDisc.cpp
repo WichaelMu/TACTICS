@@ -54,3 +54,8 @@ ABlock* UPoissonDisc::Sample(UMapMaker* MapMaker, const uint16& IterationsBefore
 	return nullptr;
 }
 
+void UPoissonDisc::Print()
+{
+	UMW::Log("Length of TSet Occipued is: " + FString::SanitizeFloat(Occupied.Num()));
+}
+
