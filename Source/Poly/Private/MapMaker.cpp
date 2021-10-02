@@ -43,6 +43,10 @@ UMapMaker::UMapMaker()
 
 	IterationsBeforeRejection = 30;
 	MinimumDistance		  = 3;
+
+	TerrainSeed = 0;
+	ContinentsSeed = 0;
+	EquatorSeed = 0;
 }
 
 
@@ -166,7 +170,7 @@ int UMapMaker::MapMidPoint()
 
 void UMapMaker::PlaceBlocks()
 {
-	float Offset = FMath::RandRange(-10000.f, 10000.f);
+	float Offset = TerrainSeed == 0 ? FMath::RandRange(-10000.f, 10000.f) : TerrainSeed;
 	UMW::Log("Terrain Seed: " + FString::SanitizeFloat(Offset) + " at " + FString::SanitizeFloat(TerrainScale) + " Scale.");
 	TerrainOffset = Offset;
 
@@ -308,7 +312,7 @@ TArray<float> UMapMaker::GenerateContinents()
 	// Initialise to all zeroes.
 	Continents.Init(0, XMap * YMap);
 
-	float Offset = FMath::RandRange(-10000.f, 10000.f);
+	float Offset = ContinentsSeed == 0 ? FMath::RandRange(-10000.f, 10000.f) : ContinentsSeed;
 	UMW::Log("Continents Seed: " + FString::SanitizeFloat(Offset) + " at " + FString::SanitizeFloat(SplitScale) + " Scale.");
 
 	for (int y = 0; y < YMap; ++y)
@@ -359,7 +363,7 @@ TArray<int> UMapMaker::ComputeEquator()
 	TArray<FVector2D> PrimeMeridian;
 	PrimeMeridian.Add(FVector2D(MX, MY));
 
-	float Offset = FMath::RandRange(-10000.f, 10000.f);
+	float Offset = EquatorSeed == 0 ? FMath::RandRange(-10000.f, 10000.f) : EquatorSeed;
 	UMW::Log("Equator Seed: " + FString::SanitizeFloat(Offset) + " at " + FString::SanitizeFloat(EquatorScale) + " Equator Scale.");
 
 	// Compute the bounds North (and North West) of the Equator, limited by Equator Influence.

@@ -62,6 +62,8 @@ protected:
 	*/
 	UPROPERTY(EditInstanceOnly, Category = "Terrain|Continents")
 		bool bGenerateContinents;
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Continents")
+		float ContinentsSeed;
 	/*The limit of Perlin Noise to begin splitting up the landmass. Higher = Large oceans.*/
 	UPROPERTY(EditInstanceOnly, Category = "Terrain|Continents", meta = (UIMin = "0", UIMax = "1", ClampMin = "0", ClampMax = "1"))
 		float SplitLimit;
@@ -77,6 +79,8 @@ protected:
 	*/
 	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
 		bool bComputeEquatorialEnvironment;
+	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
+		float EquatorSeed;
 	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
 		int EquatorInfluence;
 	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
@@ -132,6 +136,8 @@ protected:
 
 	UPROPERTY(EditInstanceOnly, Category = Terrain)
 		float TerrainScale;
+	UPROPERTY(EditInstanceOnly, Category = Terrain)
+		float TerrainSeed;
 
 	UPROPERTY(EditInstanceOnly, Category = Players)
 		TSubclassOf<AWarrior> Warrior;
