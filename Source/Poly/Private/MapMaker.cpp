@@ -646,9 +646,12 @@ ABlock* UMapMaker::RandomBlock()
 
 void UMapMaker::UpdatePosition(const FVector2D& Position)
 {
-	Instance->CameraPosition = Position;
-	
-	Instance->UpdateChunks();
+	if (Instance->NumberOfWarriors == 0)
+	{
+		Instance->CameraPosition = Position;
+
+		Instance->UpdateChunks();
+	}
 }
 
 void UMapMaker::UpdateChunks()
