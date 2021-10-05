@@ -130,8 +130,11 @@ TArray<ABlock*> UMW::Pathfind(ABlock* Origin, ABlock* Destination)
 					{
 						Open.Add(Query);
 					}
+					else
+					{
+						Open.UpdateItem(Query);
+					}
 				}
-				
 			}
 		}
 	}

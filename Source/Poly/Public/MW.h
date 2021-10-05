@@ -48,6 +48,7 @@ public:
 
 	void Add(T* Item);
 	T* RemoveFirst();
+	void UpdateItem(T* Item);
 	bool Contains(const T* Item) const;
 
 private:
@@ -99,6 +100,13 @@ T* THeap<T>::RemoveFirst()
 	SortDown(Items[0]);
 
 	return First;
+}
+
+template <typename T>
+void THeap<T>::UpdateItem(T* Item)
+{
+	SortUp(Item);
+	SortDown(Item);
 }
 
 template <typename T>
