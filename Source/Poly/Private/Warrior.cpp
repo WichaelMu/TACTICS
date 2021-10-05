@@ -141,7 +141,8 @@ void AWarrior::UpdateBlockAttacks(ABlock* From, ABlock* To)
 // Move towards Relative, accounting for traversable blocks and pathfinding.
 ABlock* AWarrior::MoveTowardsBlock(ABlock* Relative)
 {
-	CurrentPath = UMW::Pathfind(CurrentBlock, Relative);
+	//CurrentPath = UMW::Pathfind(CurrentBlock, Relative);
+	CurrentPath = TNavigator<ABlock>::Pathfind(CurrentBlock, Relative, UMapMaker::Instance->XMap * UMapMaker::Instance->YMap);
 
 	for (int i = 0; i < CurrentPath.Num() - 1; ++i)
 	{
@@ -366,8 +367,8 @@ ABlock* AWarrior::FindKillableHuman()
 			{
 				ABlock* NearestHuman = FindNearestAffiliation(EAffiliation::HUMAN);
 
-				// If the block-distance to NearestHuman is greater than 10. Flank that position.
-				if (UMW::Pathfind(CurrentBlock, NearestHuman).Num() > 10)
+				// If the block-distance to NearestHuman is greater than 6. Flank that position.
+				if (TNavigator<ABlock>::Pathfind(CurrentBlock, NearestHuman, UMapMaker::Instance->XMap * UMapMaker::Instance->YMap).Num() > 6)
 				{
 					return MoveTowardsBlock(Flank(NearestHuman));
 				}
@@ -417,7 +418,7 @@ ABlock* AWarrior::Flank(ABlock* Position)
 	int32 FlankRouteLength = FlankRoute.Num();
 
 	// The block-distance between the current AI and the nearest Human.
-	int32 DistanceToTarget = UMW::Pathfind(CurrentBlock, Position).Num();
+	int32 DistanceToTarget = TNavigator<ABlock>::Pathfind(CurrentBlock, Position, UMapMaker::Instance->XMap * UMapMaker::Instance->YMap).Num();
 
 	if (DistanceToTarget > FlankRouteLength)
 	{
