@@ -103,11 +103,11 @@ void AWarrior::MoveTo(ABlock* TargetBlock)
 		if (CurrentBlock != TargetBlock)
 		{
 			SetActorLocation(TargetBlock->GetWarriorPosition());
-			DealDamage();
 		}
 	}
 
 	UpdateBlock(TargetBlock);
+	DealDamage();
 }
 
 
@@ -156,7 +156,7 @@ ABlock* AWarrior::MoveTowardsBlock(ABlock* Relative)
 
 	// Below is distance-based pathfinding in case UMW::Pathfind(ABlock*, ABlock*) fails.
 	// It usually fails if the target is exactly 1 block away from Relative, in which case,
-	// it is completely find to use distance to determine a path, as it is already close enough.
+	// it is completely fine to use distance to determine a path, as it is already close enough.
 
 	ABlock* Towards = CurrentBlock;
 
