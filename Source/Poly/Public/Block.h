@@ -15,7 +15,7 @@ UENUM()
 enum class EType { WATER, GRASS, STONE, MOUNTAIN };
 
 UCLASS()
-class POLY_API ABlock : public AActor, public THeapItem<ABlock>
+class POLY_API ABlock : public AActor, public THeapItem<ABlock>, public TNode<ABlock>
 {
 	GENERATED_BODY()
 
@@ -68,7 +68,7 @@ public:
 		void OnBlockClicked();
 
 	// This block's world position.
-	FVector GetWorldPosition() { return GetActorLocation(); }
+	FVector GetWorldPosition() override { return GetActorLocation(); }
 	// This block's position for a warrior.
 	FVector GetWarriorPosition() { return GetWorldPosition() + FVector(0, 0, 100); }
 	// Mark this block as selected?
@@ -76,17 +76,9 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 		void SetTraversableVisibility(bool bShow);
 
-	//Pathfinding.
-	// F score.
-	float F;
-	// G cost.
-	float G;
-	// H cost.
-	float H;
-	// Shortest path to origin via this block.
-	ABlock* Parent;
+
 	// Comparison of scores between other blocks.
-	int CompareTo(ABlock*) override;
+	int CompareTo(ABlock* Block) override;
 
 	// The type of terrain.
 	EType Type;
