@@ -19,8 +19,6 @@ class POLY_API UMW : public UBlueprintFunctionLibrary
 	GENERATED_BODY()
 
 public:
-	static bool Pathfind(ABlock* Origin, ABlock* Destination, TArray<ABlock*>& Path);
-	static TArray<ABlock*> Pathfind(ABlock* Origin, ABlock* Destination);
 
 	static void RunAI();
 	static void Log(FString Message);
@@ -34,6 +32,85 @@ private:
 };
 
 
+template <typename T>
+class TNavigator
+{
+
+public:
+
+	static TArray<T*> Pathfind(T*, T*, uint16);
+
+};
+
+
+template <typename T> // Where T : THeapItem<T>, TNode<T>.
+TArray<T*> TNavigator<T>::Pathfind(T* Origin, T* Destination, uint16 SizeOfMap)
+{
+	for (T* Block : UMapMaker::Instance->Map) { Block->G = INT_MAX; }
+
+	TArray<T*> Path;
+	THeap<T> Open(Origin, SizeOfMap);
+	TSet<T*> Closed;
+
+	Open.Add(Origin);
+
+	Origin->G = 0;
+	Origin->H = FVector::DistSquared(Origin->GetActorLocation(), Destination->GetActorLocation());
+
+	while (Open.Count > 0)
+	{
+		T* Current = Open.RemoveFirst();
+		Closed.Add(Current);
+
+		if (Current == Destination)
+		{
+			T* Traverse = Destination;
+			while (Traverse != Origin)
+			{
+				Path.Add(Traverse);
+				Traverse = Traverse->Parent;
+			}
+
+			return Path;
+		}
+
+		for (int i = 0; i < 8; ++i)
+		{
+			T* Query = Current->Get(i);
+			if (Query)
+			{
+				if (!UMW::IsBlockTraversable(Query) || Closed.Contains(Query))
+				{
+					continue;
+				}
+
+				float FUpdatedCost = Current->G + FVector::DistSquared(Current->GetActorLocation(), Query->GetActorLocation());
+				if (FUpdatedCost < Query->G)
+				{
+					Query->G = FUpdatedCost;
+					Query->H = FVector::DistSquared(Query->GetActorLocation(), Destination->GetActorLocation());
+					Query->Parent = Current;
+
+					if (!Open.Contains(Query))
+					{
+						Open.Add(Query);
+					}
+					else
+					{
+						Open.UpdateItem(Query);
+					}
+				}
+			}
+		}
+	}
+
+	return Path;
+}
+
+
+/*
+* A Heap used for minimum sorting to find candidate Node with lowest Node::F in UMW::Pathfinding.
+*/
 template <typename T>
 class THeap
 {
@@ -76,6 +153,7 @@ THeap<T>::~THeap()
 }
 
 
+// Adds Item to this Heap.
 template <typename T>
 void THeap<T>::Add(T* Item)
 {
@@ -88,6 +166,7 @@ void THeap<T>::Add(T* Item)
 }
 
 
+// Returns the root and removes it.
 template <typename T>
 T* THeap<T>::RemoveFirst()
 {
@@ -102,6 +181,8 @@ T* THeap<T>::RemoveFirst()
 	return First;
 }
 
+
+// Update the Heap after Item has changed.
 template <typename T>
 void THeap<T>::UpdateItem(T* Item)
 {
@@ -109,12 +190,16 @@ void THeap<T>::UpdateItem(T* Item)
 	SortDown(Item);
 }
 
+
+// Does Item exist in this Heap?
 template <typename T>
 bool THeap<T>::Contains(const T* Item) const
 {
 	return Items[Item->HeapItemIndex] == Item;
 }
 
+
+// Sort from Item upwards.
 template <typename T>
 void THeap<T>::SortUp(T* Item)
 {
@@ -137,13 +222,15 @@ void THeap<T>::SortUp(T* Item)
 	}
 }
 
+
+// Sort from Item downwards.
 template <typename T>
 void THeap<T>::SortDown(T* Item)
 {
 	while (1)
 	{
-		int32 Left = Item->HeapItemIndex * 2 + 1;
-		int32 Right = Item->HeapItemIndex * 2 + 2;
+		int32 Left = Item->HeapItemIndex * 2 + 1;	// L and R Children.
+		int32 Right = Item->HeapItemIndex * 2 + 2;	//
 		uint32 SwapIndex = 0;
 
 		if (Left < Count)
@@ -186,6 +273,9 @@ void THeap<T>::Swap(T* Left, T* Right)
 }
 
 
+/*
+* THeap<T> where T : THeapItem<T>.
+*/
 template <typename T>
 class THeapItem
 {
@@ -193,8 +283,20 @@ class THeapItem
 public:
 
 	int32 HeapItemIndex;
-	virtual int CompareTo(T*) { return 0; }
+	virtual int CompareTo(T* Block) { return 0; }
 	virtual T* Get(const uint8& Orientation) const { return nullptr; }
 
+};
+
+
+template <typename T>
+class TNode
+{
+
+public:
+
+	T* Parent;
+	float F, G, H;
+	virtual FVector GetWorldPosition() { return FVector::ZeroVector; }
 };
 
