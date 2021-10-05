@@ -46,8 +46,6 @@ public:
 template <typename T> // Where T : THeapItem<T>, TNode<T>.
 TArray<T*> TNavigator<T>::Pathfind(T* Origin, T* Destination, uint16 SizeOfMap)
 {
-	for (T* Block : UMapMaker::Instance->Map) { Block->G = INT_MAX; }
-
 	TArray<T*> Path;
 	THeap<T> Open(Origin, SizeOfMap);
 	TSet<T*> Closed;
@@ -85,7 +83,7 @@ TArray<T*> TNavigator<T>::Pathfind(T* Origin, T* Destination, uint16 SizeOfMap)
 				}
 
 				float FUpdatedCost = Current->G + FVector::DistSquared(Current->GetActorLocation(), Query->GetActorLocation());
-				if (FUpdatedCost < Query->G)
+				if (FUpdatedCost < Query->G || !Open.Contains(Query))
 				{
 					Query->G = FUpdatedCost;
 					Query->H = FVector::DistSquared(Query->GetActorLocation(), Destination->GetActorLocation());

@@ -4,7 +4,6 @@
 #include "MW.h"
 #include "Block.h"
 #include "MapMaker.h"
-#include "MouseController.h"
 #include "Warrior.h"
 
 
@@ -39,6 +38,11 @@ void UMW::DetermineMoves()
 
 	for (AWarrior* Evaluating : AIWarriors)
 	{
+		for (ABlock* Block : UMapMaker::Instance->Map)
+		{
+			Block->G = INT_MAX;
+		}
+
 		if (Evaluating->Health <= 4)
 		{
 			Evaluating->Retreat();
