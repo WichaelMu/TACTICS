@@ -23,14 +23,20 @@ protected:
 	virtual void BeginPlay() override;
 
 public:
+
 	static UMapMaker* Instance;
 	static void GenerateLargestConcentrationOfHumans();
 	static void GenerateLargestConcentrationOfAI();
 	static ABlock* HumanConcentration;
 	static ABlock* AIConcentration;
 
+	void GenerateBlocks();
+
 	ABlock* RandomBlock();
-	TArray<ABlock*> Map;
+	UPROPERTY(Replicated)
+		TArray<ABlock*> Map;
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	TArray<AWarrior*> AllWarriors;
 
 
@@ -171,6 +177,8 @@ private:
 	void UpdateChunks();
 	uint16 XExtent;
 	uint16 YExtent;
+
+	void ClearBlocks();
 };
 
 UMapMaker* UMapMaker::Instance = nullptr;

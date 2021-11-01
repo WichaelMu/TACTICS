@@ -2,10 +2,12 @@
 
 
 #include "MapMaker.h"
+#include "EngineUtils.h"
 #include "Engine/World.h"
 #include "Warrior.h"
 #include "MW.h"
 #include "PoissonDisc.h"
+#include "Net/UnrealNetwork.h"
 
 
 // Sets default values for this component's properties
@@ -57,22 +59,11 @@ void UMapMaker::BeginPlay()
 
 	// ...
 
-	// Something is very wrong if there is no block.
-	// If there is no block, it may be resetting the Block after compiling in UE4.
-	// This bug was observed early in the development of Poly, but has been solved
-	// without a definite conclusion. It may happen again. DO NOT REMOVE.
-	if (!Block || !Grass || !Stone || !Mountain || !Water || !Shallow || !Sand || !Desert)
+	if (GetOwner()->GetLocalRole() == ROLE_Authority)
 	{
-		UE_LOG(LogTemp, Error, TEXT("NO BLOCK"));
-		return;
+		UMW::Log("Generated");
+		GenerateBlocks();
 	}
-
-	XExtent = XMap - 1;
-	YExtent = YMap - 1;
-
-	PlaceBlocks();
-	ConnectBlocks();
-	SpawnWarriors();
 }
 
 
@@ -267,6 +258,7 @@ ABlock* UMapMaker::SpawnBlock(UClass* Class, const int& X, const int& Y, EType T
 	Map.Add(NewBlock);
 	NewBlock->Index = Y * XMap + X;
 	NewBlock->Type = TerrainType;
+	NewBlock->SetTraversableVisibility(false);
 
 	return NewBlock;
 }
@@ -635,12 +627,44 @@ ABlock* UMapMaker::GetPoissonOrRandomBlock()
 }
 
 
+void UMapMaker::GenerateBlocks()
+{
+	// Something is very wrong if there is no block.
+	// If there is no block, it may be resetting the Block after compiling in UE4.
+	// This bug was observed early in the development of Poly, but has been solved
+	// without a definite conclusion. It may happen again. DO NOT REMOVE.
+	if (!Block || !Grass || !Stone || !Mountain || !Water || !Shallow || !Sand || !Desert)
+	{
+		UE_LOG(LogTemp, Error, TEXT("NO BLOCK"));
+		return;
+	}
+
+	UMW::Log("Generating...");
+	ClearBlocks();
+
+	XExtent = XMap - 1;
+	YExtent = YMap - 1;
+
+	PlaceBlocks();
+	ConnectBlocks();
+	SpawnWarriors();
+}
+
 // A random block in Map.
 ABlock* UMapMaker::RandomBlock()
 {
 	int RandomBlockIndex = FMath::RandRange(0, Map.Num() - 1);
 
 	return Map[RandomBlockIndex];
+}
+
+void UMapMaker::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	// ...
+
+	DOREPLIFETIME(UMapMaker, Map);
 }
 
 
@@ -682,6 +706,19 @@ void UMapMaker::UpdateChunks()
 
 			EvaluateBlockType(Perlin, x, YExtent);
 		}
+	}
+}
+
+void UMapMaker::ClearBlocks()
+{
+	for (TActorIterator<ABlock> it(GetWorld()); it; ++it)
+	{
+		(*it)->Destroy();
+	}
+
+	if (Instance)
+	{
+		Instance->Map.Empty();
 	}
 }
 

@@ -62,3 +62,11 @@ void UMW::Log(FString Message)
 	UE_LOG(LogTemp, Warning, TEXT("%s"), *Message);
 }
 
+
+/// <summary>UE_LOG's Message to the Output Log with Warning Verbosity.</summary>
+/// <param name="Message">The FString to display.</param>
+void UMW::LogError(FString Message)
+{
+	UE_LOG(LogTemp, Error, TEXT("%s"), * Message);
+}
+

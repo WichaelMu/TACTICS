@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Warrior.h"
+#include "Net/UnrealNetwork.h"
 #include "MouseController.generated.h"
 
 class ABlock;
@@ -50,6 +51,15 @@ private:
 	void Throttle(float Throw);
 
 	void Rise(float Throw);
+
+	UFUNCTION(Server, Reliable)
+		void ServerForward(const float& Throw);
+	UFUNCTION(Server, Reliable)
+		void ServerRight(const float& Throw);
+	UFUNCTION(Server, Reliable)
+		void ServerThrottle(const float& Throw);
+	UFUNCTION(Server, Reliable)
+		void ServerRise(const float& Throw);
 
 	// Clamp the movement speed of the camera to this speed.
 	UPROPERTY(EditAnywhere)

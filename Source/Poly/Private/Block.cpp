@@ -23,8 +23,9 @@ void ABlock::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// ...
 
-	SetTraversableVisibility(false);
+
 }
 
 

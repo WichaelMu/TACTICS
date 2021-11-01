@@ -7,6 +7,7 @@
 #include "Warrior.h"
 #include "Block.h"
 #include "MapMaker.h"
+#include "Net/UnrealNetwork.h"
 
 
 // Sets default values
@@ -53,6 +54,35 @@ void AMouseController::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 /// <param name="Throw"></param>
 void AMouseController::Forward(float Throw)
 {
+	ServerForward(Throw);
+}
+
+
+// Called by Right Axis.
+/// <summary>Controls the left/right movement of the player.</summary>
+/// <param name="Throw"></param>
+void AMouseController::Right(float Throw)
+{
+	ServerRight(Throw);
+}
+
+
+// Called by Scroll Axis.
+/// <summary>Controls the movement speed of the player.</summary>
+/// <param name="Throw"></param>
+void AMouseController::Throttle(float Throw)
+{
+	ServerThrottle(Throw);
+}
+
+
+void AMouseController::Rise(float Throw)
+{
+	ServerRise(Throw);
+}
+
+void AMouseController::ServerForward_Implementation(const float& Throw)
+{
 	FRotator ActorForwardYaw = GetControlRotation();
 	ActorForwardYaw.Pitch = 0;
 	ActorForwardYaw.Roll = 0;
@@ -63,11 +93,7 @@ void AMouseController::Forward(float Throw)
 	UMapMaker::UpdatePosition(FVector2D(Position.X, Position.Y));
 }
 
-
-// Called by Right Axis.
-/// <summary>Controls the left/right movement of the player.</summary>
-/// <param name="Throw"></param>
-void AMouseController::Right(float Throw)
+void AMouseController::ServerRight_Implementation(const float& Throw)
 {
 	FVector Position = GetActorLocation();
 	SetActorLocation(Position + GetActorRightVector() * Throw * MoveAmplifier * GetWorld()->GetDeltaSeconds());
@@ -75,11 +101,7 @@ void AMouseController::Right(float Throw)
 	UMapMaker::UpdatePosition(FVector2D(Position.X, Position.Y));
 }
 
-
-// Called by Scroll Axis.
-/// <summary>Controls the movement speed of the player.</summary>
-/// <param name="Throw"></param>
-void AMouseController::Throttle(float Throw)
+void AMouseController::ServerThrottle_Implementation(const float& Throw)
 {
 	MoveAmplifier += Throw * 100;
 	// Clamp the movement speed to a minimum of 1.
@@ -89,8 +111,7 @@ void AMouseController::Throttle(float Throw)
 	}
 }
 
-
-void AMouseController::Rise(float Throw)
+void AMouseController::ServerRise_Implementation(const float& Throw)
 {
 	SetActorLocation(GetActorLocation() + GetActorUpVector() * Throw * MoveAmplifier * GetWorld()->GetDeltaSeconds());
 }

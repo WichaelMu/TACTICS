@@ -22,6 +22,7 @@ public:
 
 	static void RunAI();
 	static void Log(FString Message);
+	static void LogError(FString Message);
 
 	static bool IsBlockTraversable(ABlock* Query);
 
