@@ -31,11 +31,14 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	static void BlockClicked(ABlock*);
 	static AMouseController* Instance;
 	static EAffiliation CurrentTurn;
 
-	TArray<ABlock*> Traversable;
+	UPROPERTY(Replicated)
+		TArray<ABlock*> Traversable;
 
 
 	UFUNCTION(BlueprintCallable)
@@ -77,4 +80,4 @@ private:
 
 
 AMouseController* AMouseController::Instance = nullptr;
-EAffiliation AMouseController::CurrentTurn = EAffiliation::HUMAN;
+EAffiliation AMouseController::CurrentTurn = EAffiliation::HUMAN1;

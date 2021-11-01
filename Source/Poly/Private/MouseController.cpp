@@ -18,7 +18,7 @@ AMouseController::AMouseController()
 
 	Instance = this;
 	
-	CurrentTurn = EAffiliation::HUMAN;
+	CurrentTurn = EAffiliation::HUMAN1;
 }
 
 
@@ -46,6 +46,15 @@ void AMouseController::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 	// Spacebar / LShift for altitude.
 	PlayerInputComponent->BindAxis("Rise", this, &AMouseController::Rise);
+}
+
+void AMouseController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	// ...
+
+	DOREPLIFETIME(AMouseController, Traversable);
 }
 
 
@@ -119,27 +128,43 @@ void AMouseController::ServerRise_Implementation(const float& Throw)
 
 void AMouseController::EndTurn()
 {
-	// Ending Human turn.
-	if (CurrentTurn == EAffiliation::HUMAN)
+	if (GetLocalRole() == ROLE_AutonomousProxy)
 	{
-		// What happens when the Human ends their turn.
+		// Ending Human turn.
+		if (CurrentTurn == EAffiliation::HUMAN1) // Ending P1 turn.
+		{
+			UMW::Log("Ending P1");
 
-		CurrentTurn = EAffiliation::AI;
+			// What happens when the Human ends their turn.
 
-		UMapMaker::GenerateLargestConcentrationOfHumans();
-		UMapMaker::GenerateLargestConcentrationOfAI();
+			// Move on to P2.
+			CurrentTurn = EAffiliation::HUMAN2;
+		}
+		else if (CurrentTurn == EAffiliation::HUMAN2) // Ending P2 turn.
+		{
+			UMW::Log("Ending P2");
 
-		// After making moves, clear traversable[?] and end turn.
-		UMW::RunAI();
+			// Move on to AI.
+			CurrentTurn = EAffiliation::AI;
 
-		// After the AI has made its moves, end the turn.
-		EndTurn();
-	}
-	else // Ending AI turn.
-	{
-		// What happens when the AI ends their turn.
+			UMapMaker::GenerateLargestConcentrationOfHumans();
+			UMapMaker::GenerateLargestConcentrationOfAI();
 
-		CurrentTurn = EAffiliation::HUMAN;
+			// After making moves, clear traversable[?] and end turn.
+			UMW::RunAI();
+
+			// After the AI has made its moves, end the turn.
+			EndTurn();
+		}
+		else // Ending AI turn.
+		{
+			UMW::Log("Ending AI");
+
+			// What happens when the AI ends their turn.
+
+			CurrentTurn = EAffiliation::HUMAN1;
+
+		}
 	}
 
 	AlreadyMovedWarriors.Empty();

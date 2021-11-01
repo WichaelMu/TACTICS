@@ -1,0 +1,5 @@
+﻿Build started...
+1>------ Build started: Project: Poly, Configuration: Development_Editor x64 ------
+1>Using 'git status' to determine working set for adaptive non-unity build (C:\Users\table\Documents\Machine Code\UE\Poly).
+1>Parsing headers for PolyEditor
+1>  Running UnrealHeaderTool "C:\Users\table\Documents\Machine Code\UE\Poly\Poly.uproject" "C:\Users\table\Documents\Machine Code\UE\Poly\Intermediate\Build\Win64\PolyEditor\Development\PolyEditor.uhtmanifest" -LogCmds="loginit warning, logexit warning, logdatabase error" -Unattended -WarningsAsErrors -installed

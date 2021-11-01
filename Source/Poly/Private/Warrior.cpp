@@ -7,15 +7,17 @@
 #include "Components/StaticMeshComponent.h"
 #include "UObject/ConstructorHelpers.h"
 #include "MapMaker.h"
+#include "MouseController.h"
 #include "DrawDebugHelpers.h"
 #include "MW.h"
+#include "Net/UnrealNetwork.h"
 
 
 // Sets default values
 AWarrior::AWarrior()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 
 
 	// Make a new cube root component.
@@ -52,6 +54,9 @@ void AWarrior::BeginPlay()
 	
 
 	Health = 20;
+
+	AssignAffiliationColours();
+	SetOwner(AMouseController::Instance);
 }
 
 
@@ -62,11 +67,28 @@ void AWarrior::Tick(float DeltaTime)
 
 }
 
+bool AWarrior::ShouldTickIfViewportsOnly() const
+{
+	return true;
+}
+
 
 // Positive = AI advantage. Negative = Human advantage. 0 = Equal material.
 int32 AWarrior::EvaluateMap()
 {
 	return NumberOfAI - NumberOfHuman;
+}
+
+void AWarrior::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	// ...
+
+	DOREPLIFETIME(AWarrior, Health);
+	DOREPLIFETIME(AWarrior, CurrentBlock);
+	DOREPLIFETIME(AWarrior, PreviousBlock);
+	DOREPLIFETIME(AWarrior, Affiliation);
 }
 
 
@@ -97,12 +119,34 @@ void AWarrior::OnSpawn(ABlock* SpawnedBlock, EAffiliation TeamAffiliation)
 // Move this warrior to TargetBlock.
 void AWarrior::MoveTo(ABlock* TargetBlock)
 {
+
+	switch (Role)
+	{
+	case ROLE_Authority:
+		UMW::Log("AUTH");
+		break;
+	case ROLE_AutonomousProxy:
+		UMW::Log("PROX");
+		break;
+	case ROLE_SimulatedProxy:
+		UMW::Log("SIMU");
+		break;
+	case ROLE_None:
+		UMW::Log("NONE");
+		break;
+	case ROLE_MAX:
+		UMW::Log("MAX");
+		break;
+	default:
+		UMW::Log("WHAT");
+	}
 	// TODO: Change the location of the warrior with interpolation and pathfinding.
 	if (CurrentBlock)
 	{
 		if (CurrentBlock != TargetBlock)
 		{
 			SetActorLocation(TargetBlock->GetWarriorPosition());
+			ServerMoveTo(TargetBlock);
 		}
 	}
 
@@ -110,6 +154,11 @@ void AWarrior::MoveTo(ABlock* TargetBlock)
 	DealDamage();
 }
 
+
+void AWarrior::ServerMoveTo_Implementation(ABlock* TargetBlock)
+{
+	SetActorLocation(TargetBlock->GetWarriorPosition());
+}
 
 // Update block information when moving between blocks.
 void AWarrior::UpdateBlock(ABlock* NewBlock)
@@ -225,7 +274,7 @@ void AWarrior::KillThisWarrior()
 	CurrentBlock = nullptr;
 
 	// Reduce the number of Affiliation members.
-	if (Affiliation == EAffiliation::HUMAN)
+	if (Affiliation == EAffiliation::HUMAN1 || Affiliation == EAffiliation::HUMAN2)
 	{
 		NumberOfHuman--;
 	}
@@ -342,7 +391,7 @@ ABlock* AWarrior::FindKillableHuman()
 			if (Block->HumanAttacked <= Block->AIAttacked)
 			{
 				// If this AI is within can attack, go to that block.
-				if (Block->IsNextToAffiliation(EAffiliation::HUMAN))
+				if (Block->IsNextToAffiliation(EAffiliation::HUMAN1) || Block->IsNextToAffiliation(EAffiliation::HUMAN2))
 				{
 					return Block;
 				}
@@ -365,7 +414,7 @@ ABlock* AWarrior::FindKillableHuman()
 			// If still quite healthy, align to target Humans.
 			if (Health > 16)
 			{
-				ABlock* NearestHuman = FindNearestAffiliation(EAffiliation::HUMAN);
+				ABlock* NearestHuman = FindNearestAffiliation(EAffiliation::HUMAN1);
 
 				// If the block-distance to NearestHuman is greater than 6. Flank that position.
 				if (TNavigator<ABlock>::Pathfind(CurrentBlock, NearestHuman, UMapMaker::Instance->XMap * UMapMaker::Instance->YMap).Num() > 6)
@@ -385,7 +434,7 @@ ABlock* AWarrior::FindKillableHuman()
 		if (Evaluation >= 2)
 		{
 			// Align to nearest Human by prediction.
-			return MoveTowardsBlock(Flank(FindNearestAffiliation(EAffiliation::HUMAN)));
+			return MoveTowardsBlock(Flank(FindNearestAffiliation(EAffiliation::HUMAN1)));
 		}
 		else
 		{
@@ -397,7 +446,7 @@ ABlock* AWarrior::FindKillableHuman()
 	CurrentPath.Empty();
 
 	// Find a block that minimises the distance to an enemy.
-	ABlock* BestMove = MoveTowardsBlock(FindNearestAffiliation(EAffiliation::HUMAN));
+	ABlock* BestMove = MoveTowardsBlock(FindNearestAffiliation(EAffiliation::HUMAN1));
 	return BestMove;
 }
 
@@ -508,7 +557,7 @@ ABlock* AWarrior::FindNearestAffiliation(const EAffiliation& Nearest)
 
 	// This is executed when BFS can't find a reachable Human.
 	// Go towards the largest concentration of Nearest instead. (At least try to get to the enemy).
-	return Nearest == EAffiliation::HUMAN ? ConcentrationOfHumans() : ConcentrationOfAI();
+	return Nearest == EAffiliation::HUMAN1 ? ConcentrationOfHumans() : ConcentrationOfAI();
 }
 
 

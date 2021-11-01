@@ -37,16 +37,19 @@ public:
 		TArray<ABlock*> Map;
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	TArray<AWarrior*> AllWarriors;
+	UPROPERTY(Replicated)
+		TArray<AWarrior*> AllWarriors;
 
 
-	UPROPERTY(EditInstanceOnly)
+	UPROPERTY(Replicated, EditInstanceOnly)
 		uint16 XMap;
-	UPROPERTY(EditInstanceOnly)
+	UPROPERTY(Replicated, EditInstanceOnly)
 		uint16 YMap;
 
 
 	static void UpdatePosition(const FVector2D& Position);
+
+	void SpawnWarriors();
 
 
 protected:
@@ -54,101 +57,102 @@ protected:
 	/*
 	* Falloff settings.
 	*/
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Falloff")
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Falloff")
 		bool bUseFalloffMap;
 	/*Centre falloff modification. Higher = More land.*/
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Falloff")
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Falloff")
 		float FalloffBias;
 	/*The smoothness of the transition. Higher = Sharper falloff edges.*/
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Falloff")
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Falloff")
 		float CurveStrength;
 
 	/*
 	* Continents settings.
 	*/
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Continents")
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Continents")
 		bool bGenerateContinents;
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Continents")
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Continents")
 		float ContinentsSeed;
 	/*The limit of Perlin Noise to begin splitting up the landmass. Higher = Large oceans.*/
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Continents", meta = (UIMin = "0", UIMax = "1", ClampMin = "0", ClampMax = "1"))
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Continents", meta = (UIMin = "0", UIMax = "1", ClampMin = "0", ClampMax = "1"))
 		float SplitLimit;
 	/*How much should the splits take from the terrain. Higher = Larger splits.*/
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Continents", meta = (UIMin = "0", UIMax = "1", ClampMin = "0", ClampMax = "1"))
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Continents", meta = (UIMin = "0", UIMax = "1", ClampMin = "0", ClampMax = "1"))
 		float SplitDistance;
 	/*How often should these splits occur. Higher = Spots of water.*/
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Continents", meta = (UIMin = "0", UIMax = "0.1", ClampMin = "0", ClampMax = "0.1"))
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Continents", meta = (UIMin = "0", UIMax = "0.1", ClampMin = "0", ClampMax = "0.1"))
 		float SplitScale;
 
 	/*
 	* Equator settings.
 	*/
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Equator")
 		bool bComputeEquatorialEnvironment;
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Equator")
 		float EquatorSeed;
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Equator")
 		int EquatorInfluence;
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Equator")
 		float EquatorBias;
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Equator")
 		float EquatorStrength;
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Equator")
 		float EquatorSpread;
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Equator")
 		float EquatorScale;
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Equator")
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Equator")
 		TSubclassOf<ABlock> Desert;
 
 	/*
 	* Poisson Disc Sampling settings.
 	*/
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Poisson Disc Sampling for Warrior Spawning")
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Poisson Disc Sampling for Warrior Spawning")
 		bool bGeneratePoissonSpawning;
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Poisson Disc Sampling for Warrior Spawning")
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Poisson Disc Sampling for Warrior Spawning")
 		uint16 IterationsBeforeRejection;
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Poisson Disc Sampling for Warrior Spawning")
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Poisson Disc Sampling for Warrior Spawning")
 		uint8 MinimumDistance;
 
 
-	UPROPERTY(EditInstanceOnly, Category = Terrain)
+	UPROPERTY(Replicated, EditInstanceOnly, Category = Terrain)
 		TSubclassOf<ABlock> Sand;
-	UPROPERTY(EditInstanceOnly, Category = Terrain)
+	UPROPERTY(Replicated, EditInstanceOnly, Category = Terrain)
 		TSubclassOf<ABlock> Shallow;
-	UPROPERTY(EditInstanceOnly, Category = Terrain)
+	UPROPERTY(Replicated, EditInstanceOnly, Category = Terrain)
 		TSubclassOf<ABlock> Water;
-	UPROPERTY(EditInstanceOnly, Category = Terrain)
+	UPROPERTY(Replicated, EditInstanceOnly, Category = Terrain)
 		TSubclassOf<ABlock> Block;
-	UPROPERTY(EditInstanceOnly, Category = Terrain)
+	UPROPERTY(Replicated, EditInstanceOnly, Category = Terrain)
 		TSubclassOf<ABlock> Grass;
-	UPROPERTY(EditInstanceOnly, Category = Terrain)
+	UPROPERTY(Replicated, EditInstanceOnly, Category = Terrain)
 		TSubclassOf<ABlock> Stone;
-	UPROPERTY(EditInstanceOnly, Category = Terrain)
+	UPROPERTY(Replicated, EditInstanceOnly, Category = Terrain)
 		TSubclassOf<ABlock> Mountain;
 	
 	// Water | Grass | Stone | Mountain, etc. limits.
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Limits")
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Limits")
 		float WaterLimits;
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Limits")
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Limits")
 		float ShallowLimits;
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Limits")
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Limits")
 		float SandLimits;
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Limits")
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Limits")
 		float GrassLimits;
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Limits")
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Limits")
 		float StoneLimits;
-	UPROPERTY(EditInstanceOnly, Category = "Terrain|Limits")
+	UPROPERTY(Replicated, EditInstanceOnly, Category = "Terrain|Limits")
 		float MountainLimits;
 
-	UPROPERTY(EditInstanceOnly, Category = Terrain)
+	UPROPERTY(Replicated, EditInstanceOnly, Category = Terrain)
 		float TerrainScale;
-	UPROPERTY(EditInstanceOnly, Category = Terrain)
+	UPROPERTY(Replicated, EditInstanceOnly, Category = Terrain)
 		float TerrainSeed;
 
-	UPROPERTY(EditInstanceOnly, Category = Players)
+	UPROPERTY(Replicated, EditInstanceOnly, Category = Players)
 		TSubclassOf<AWarrior> Warrior;
-	UPROPERTY(EditInstanceOnly, Category = Players)
+	UPROPERTY(Replicated, EditInstanceOnly, Category = Players)
 		int NumberOfWarriors;
+
 
 private:
 
@@ -158,7 +162,6 @@ private:
 	void EvaluateBlockType(const float& Perlin, const int& X, const int& Y);
 	ABlock* SpawnBlock(UClass* Class, const int& X, const int& Y, EType TerrainType);
 	void ConnectBlocks();
-	void SpawnWarriors();
 
 	ABlock* GetPoissonOrRandomBlock();
 

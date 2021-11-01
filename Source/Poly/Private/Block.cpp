@@ -43,7 +43,7 @@ TArray<ABlock*> ABlock::ComputeTrajectory(ABlock* NearestHeuristic, uint8 Depth)
 		AWarrior* Warrior = Query->Occupant;
 		if (Warrior)
 		{
-			if (Warrior->Affiliation == EAffiliation::HUMAN)
+			if (Warrior->Affiliation == EAffiliation::HUMAN1 || Warrior->Affiliation == EAffiliation::HUMAN2)
 			{
 				From = Warrior->PreviousBlock;
 				To = Warrior->CurrentBlock;
@@ -97,6 +97,31 @@ TArray<ABlock*> ABlock::ComputeTrajectory(ABlock* NearestHeuristic, uint8 Depth)
 	return PossibleTrajectory;
 }
 
+void ABlock::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	// ...
+
+	DOREPLIFETIME(ABlock, Index);
+	DOREPLIFETIME(ABlock, AIAttacked);
+	DOREPLIFETIME(ABlock, HumanAttacked);
+
+	DOREPLIFETIME(ABlock, Type);
+
+	DOREPLIFETIME(ABlock, North);
+	DOREPLIFETIME(ABlock, South);
+	DOREPLIFETIME(ABlock, East);
+	DOREPLIFETIME(ABlock, West);
+
+	DOREPLIFETIME(ABlock, NorthEast);
+	DOREPLIFETIME(ABlock, NorthWest);
+	DOREPLIFETIME(ABlock, SouthEast);
+	DOREPLIFETIME(ABlock, SouthWest);
+
+	DOREPLIFETIME(ABlock, Occupant);
+}
+
 
 // Called using blueprint OnMouseClicked.
 void ABlock::OnBlockClicked()
@@ -112,6 +137,8 @@ void ABlock::Selected(bool bSelected)
 	if (bSelected)
 	{
 		//SetActorScale3D(FVector(.5f, .5f, .5f));
+
+		// Registers which Blocks are traversable.
 		AMouseController::Instance->Traversable = GetTraversableBlocks();
 	}
 
@@ -183,7 +210,7 @@ TArray<ABlock*> ABlock::GetTraversableBlocks()
 {
 	TArray<ABlock*> Blocks;
 	SearchDepthInitialise(Blocks, 2);
-	if (AMouseController::CurrentTurn == EAffiliation::HUMAN)
+	if (AMouseController::CurrentTurn == EAffiliation::HUMAN1 || AMouseController::CurrentTurn == EAffiliation::HUMAN2)
 	{
 		for (ABlock* Surround : Blocks)
 		{
@@ -269,7 +296,7 @@ void ABlock::SearchDepthLogic(TArray<ABlock*>& Blocks, uint8 Depth, TSet<ABlock*
 				{
 					continue;
 				}
-
+				
 				// Don't bother wasting time processing an already-visited block.
 				if (!Visited.Contains(QueryBlock))
 				{
@@ -352,7 +379,7 @@ void ABlock::DeductAttacks(EAffiliation DeductingAffiliation)
 	TArray<ABlock*> Depth = SearchAtDepth(3, false);
 
 	// Deduct for humans.
-	if (DeductingAffiliation == EAffiliation::HUMAN)
+	if (DeductingAffiliation == EAffiliation::HUMAN1 || DeductingAffiliation == EAffiliation::HUMAN2)
 	{
 		// Deduct from this block.
 		HumanAttacked--;
@@ -388,7 +415,7 @@ void ABlock::AppendAttacks(EAffiliation AppendingAffiliation)
 	TArray<ABlock*> Depth = SearchAtDepth(3, false);
 
 	// Append for humans.
-	if (AppendingAffiliation == EAffiliation::HUMAN)
+	if (AppendingAffiliation == EAffiliation::HUMAN1 || AppendingAffiliation == EAffiliation::HUMAN2)
 	{
 		// Append to blocks around Depth.
 		for (ABlock* Block : Depth)

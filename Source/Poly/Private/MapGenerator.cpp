@@ -23,6 +23,7 @@ AMapGenerator::AMapGenerator()
 	if (MapMaker)
 	{
 		AddOwnedComponent(MapMaker);
+		MapMaker->SetIsReplicated(true);
 	}
 	else
 	{
@@ -45,7 +46,7 @@ void AMapGenerator::Tick(float DeltaTime)
 		}
 		else
 		{
-			UMW::LogError("AMapGenerator::No Map Maker!");
+			UMW::LogError("AMapGenerator::Tick No Map Maker!");
 		}
 
 		bGenerateMap = !bGenerateMap;
@@ -56,5 +57,17 @@ void AMapGenerator::Tick(float DeltaTime)
 bool AMapGenerator::ShouldTickIfViewportsOnly() const
 {
 	return true;
+}
+
+void AMapGenerator::InitialiseGame()
+{
+	if (MapMaker && GetLocalRole() == ROLE_Authority)
+	{
+		MapMaker->SpawnWarriors();
+	}
+	else
+	{
+		UMW::LogError("AMapGenerator::InitialiseGame No Map Maker!");
+	}
 }
 

@@ -6,6 +6,9 @@
 #include "GameFramework/GameMode.h"
 #include "Multiplayer.generated.h"
 
+class AWarrior;
+class ABlock;
+
 /**
  * 
  */
@@ -17,4 +20,6 @@ class POLY_API AMultiplayer : public AGameMode
 public:
 
 	void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessages) override;
+
+	void RegisterMovement(AWarrior& WarriorToMove, ABlock& BlockDestination);
 };

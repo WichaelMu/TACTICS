@@ -9,8 +9,8 @@
 class UStaticMeshComponent;
 class ABlock;
 
-UENUM()
-enum class EAffiliation : uint8 { HUMAN, AI };
+UENUM(BlueprintType)
+enum class EAffiliation : uint8 { HUMAN1, HUMAN2, AI };
 
 UCLASS()
 class POLY_API AWarrior : public AActor
@@ -29,11 +29,13 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	virtual bool ShouldTickIfViewportsOnly() const override;
 
 	static int32 NumberOfAI;
 	static int32 NumberOfHuman;
 	static int32 EvaluateMap();
 
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void OnSpawn(ABlock* SpawnedBlock, EAffiliation TeamAffiliation);
 
@@ -44,11 +46,13 @@ public:
 		UStaticMeshComponent* RootMesh;
 
 	void MoveTo(ABlock* TargetBlock);
+	UFUNCTION(Server, Reliable)
+		void ServerMoveTo(ABlock* TargetBlock);
 	void UpdateBlock(ABlock* NewBlock);
 	void UpdateBlockAttacks(ABlock* Departing, ABlock* Arriving);
 
 
-	UPROPERTY(VisibleAnywhere, Category = Health)
+	UPROPERTY(Replicated, VisibleAnywhere, Category = Health)
 		int Health;
 	int Revive();
 	// The damage this warrior will deal.
@@ -58,11 +62,12 @@ public:
 	TArray<AWarrior*> GetAttackableWarriors();
 	
 	// The block this warrior is standing on.
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
 		ABlock* CurrentBlock;
-	ABlock* PreviousBlock;
+	UPROPERTY(Replicated)
+		ABlock* PreviousBlock;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Affiliation)
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = Affiliation)
 		EAffiliation Affiliation;
 
 	// Defined in blueprint.

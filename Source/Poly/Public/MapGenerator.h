@@ -26,6 +26,8 @@ public:
 	UPROPERTY(EditAnywhere)
 		bool bGenerateMap;
 
+	void InitialiseGame();
+
 public:
 
 	UPROPERTY(VisibleAnywhere)

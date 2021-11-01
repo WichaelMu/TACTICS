@@ -32,35 +32,36 @@ public:
 
 	static TArray<ABlock*> ComputeTrajectory(ABlock* NearestHeuristic, uint8 Depth);
 
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere)
 		int32 Index = -1;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere)
 		int AIAttacked;
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere)
 		int HumanAttacked;
 
 	// Neighbouring Blocks.
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere)
 		ABlock* North = nullptr;
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere)
 		ABlock* South = nullptr;
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere)
 		ABlock* East = nullptr;
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere)
 		ABlock* West = nullptr;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere)
 		ABlock* NorthEast = nullptr;
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere)
 		ABlock* NorthWest = nullptr;
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere)
 		ABlock* SouthEast = nullptr;
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere)
 		ABlock* SouthWest = nullptr;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere)
 		// The Warrior that is currently occupying this Block.
 		AWarrior* Occupant = nullptr;
 
@@ -81,7 +82,8 @@ public:
 	int CompareTo(ABlock* Block) override;
 
 	// The type of terrain.
-	EType Type;
+	UPROPERTY(Replicated)
+		EType Type;
 
 	// Get this block's neighbour at orientation.
 	ABlock* Get(const uint8& Orientation) const override;

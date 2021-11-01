@@ -59,19 +59,25 @@ void UMapMaker::BeginPlay()
 
 	// ...
 
-	if (GetOwner()->GetLocalRole() == ROLE_Authority)
-	{
-		UMW::Log("Generated");
-		GenerateBlocks();
-	}
+	
 }
 
 
 void UMapMaker::GenerateLargestConcentrationOfHumans()
 {
+	if (Instance->Map.Num() == 0)
+	{
+		UMW::Log("NULL AMP " + FString::SanitizeFloat(Instance->Map.Num()));
+	}
+	return;
 	TArray<ABlock*> CopyOfMap = Instance->Map;
-
 	ABlock* MaxHuman = CopyOfMap[MapMidPoint()];
+	if (!MaxHuman)
+	{
+		UMW::Log("NUL");
+	}
+	UMW::Log("MAP");
+	return;
 
 	// Defualt the largest concentration of Humans to the centre of the map.
 	if (AWarrior::NumberOfHuman == 0)
@@ -111,6 +117,11 @@ void UMapMaker::GenerateLargestConcentrationOfHumans()
 
 void UMapMaker::GenerateLargestConcentrationOfAI()
 {
+	if (Instance->Map.Num() == 0)
+	{
+		UMW::Log("NULL AMP " + FString::SanitizeFloat(Instance->Map.Num()));
+	}
+	return;
 	TArray<ABlock*> CopyOfMap = Instance->Map;
 
 	ABlock* MaxAI = CopyOfMap[MapMidPoint()];
@@ -161,7 +172,7 @@ int UMapMaker::MapMidPoint()
 
 void UMapMaker::PlaceBlocks()
 {
-	float Offset = TerrainSeed == 0 ? FMath::RandRange(-10000.f, 10000.f) : TerrainSeed;
+	float Offset = TerrainSeed == 0 ? 11374265.43f : TerrainSeed;
 	UMW::Log("Terrain Seed: " + FString::SanitizeFloat(Offset) + " at " + FString::SanitizeFloat(TerrainScale) + " Scale.");
 	TerrainOffset = Offset;
 
@@ -258,7 +269,6 @@ ABlock* UMapMaker::SpawnBlock(UClass* Class, const int& X, const int& Y, EType T
 	Map.Add(NewBlock);
 	NewBlock->Index = Y * XMap + X;
 	NewBlock->Type = TerrainType;
-	NewBlock->SetTraversableVisibility(false);
 
 	return NewBlock;
 }
@@ -304,7 +314,7 @@ TArray<float> UMapMaker::GenerateContinents()
 	// Initialise to all zeroes.
 	Continents.Init(0, XMap * YMap);
 
-	float Offset = ContinentsSeed == 0 ? FMath::RandRange(-10000.f, 10000.f) : ContinentsSeed;
+	float Offset = ContinentsSeed == 0 ? 470639692.33f : ContinentsSeed;
 	UMW::Log("Continents Seed: " + FString::SanitizeFloat(Offset) + " at " + FString::SanitizeFloat(SplitScale) + " Scale.");
 
 	for (int y = 0; y < YMap; ++y)
@@ -355,7 +365,7 @@ TArray<int> UMapMaker::ComputeEquator()
 	TArray<FVector2D> PrimeMeridian;
 	PrimeMeridian.Add(FVector2D(MX, MY));
 
-	float Offset = EquatorSeed == 0 ? FMath::RandRange(-10000.f, 10000.f) : EquatorSeed;
+	float Offset = EquatorSeed == 0 ? 69681886.17f : EquatorSeed;
 	UMW::Log("Equator Seed: " + FString::SanitizeFloat(Offset) + " at " + FString::SanitizeFloat(EquatorScale) + " Equator Scale.");
 
 	// Compute the bounds North (and North West) of the Equator, limited by Equator Influence.
@@ -586,14 +596,20 @@ void UMapMaker::SpawnWarriors()
 		ABlock* PoissonSpawnPoint = GetPoissonOrRandomBlock();
 
 		AWarrior* SpawnedWarrior1 = GetWorld()->SpawnActor<AWarrior>(Warrior, FVector::ZeroVector, FRotator::ZeroRotator);
-		SpawnedWarrior1->OnSpawn(PoissonSpawnPoint, EAffiliation::HUMAN);
+		SpawnedWarrior1->OnSpawn(PoissonSpawnPoint, EAffiliation::HUMAN1);
 		AllWarriors.Add(SpawnedWarrior1);
 
 		PoissonSpawnPoint = GetPoissonOrRandomBlock();
 
 		AWarrior* SpawnedWarrior2 = GetWorld()->SpawnActor<AWarrior>(Warrior, FVector::ZeroVector, FRotator::ZeroRotator);
-		SpawnedWarrior2->OnSpawn(PoissonSpawnPoint, EAffiliation::AI);
+		SpawnedWarrior2->OnSpawn(PoissonSpawnPoint, EAffiliation::HUMAN2);
 		AllWarriors.Add(SpawnedWarrior2);
+
+		PoissonSpawnPoint = GetPoissonOrRandomBlock();
+
+		AWarrior* SpawnedWarrior3 = GetWorld()->SpawnActor<AWarrior>(Warrior, FVector::ZeroVector, FRotator::ZeroRotator);
+		SpawnedWarrior3->OnSpawn(PoissonSpawnPoint, EAffiliation::AI);
+		AllWarriors.Add(SpawnedWarrior3);
 	}
 
 	AWarrior::NumberOfAI = NumberOfWarriors;
@@ -638,7 +654,6 @@ void UMapMaker::GenerateBlocks()
 		UE_LOG(LogTemp, Error, TEXT("NO BLOCK"));
 		return;
 	}
-
 	UMW::Log("Generating...");
 	ClearBlocks();
 
@@ -647,7 +662,6 @@ void UMapMaker::GenerateBlocks()
 
 	PlaceBlocks();
 	ConnectBlocks();
-	SpawnWarriors();
 }
 
 // A random block in Map.
@@ -716,9 +730,6 @@ void UMapMaker::ClearBlocks()
 		(*it)->Destroy();
 	}
 
-	if (Instance)
-	{
-		Instance->Map.Empty();
-	}
+	Map.Empty();
 }
 
