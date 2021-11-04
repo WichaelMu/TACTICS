@@ -114,13 +114,15 @@ private:
 	// Search.
 	ABlock* ConcentrationOfHumans();
 	ABlock* ConcentrationOfAI();
-	ABlock* FindNearestAffiliation(const EAffiliation& Nearest);
+	ABlock* FindNearestHumanAffiliation(const EAffiliation& Nearest);
 	TArray<ABlock*> CurrentPath;
 
 	UFUNCTION(BlueprintCallable)
 		void DealDamage();
 	bool HealthIsFatal();
 	void KillThisWarrior();
+	UFUNCTION(Server, Reliable, NetMulticast)
+		void ServerKillThisWarrior();
 
 	ABlock* MoveTowardsBlock(ABlock* Relative);
 

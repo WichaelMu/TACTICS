@@ -26,6 +26,9 @@ public:
 
 	static bool IsBlockTraversable(ABlock* Query);
 
+	template <typename T>
+	static T* Coalesce(T* Left, T* Right);
+
 private:
 
 	static void DetermineMoves();

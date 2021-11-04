@@ -730,7 +730,7 @@ void UMapMaker::ServerSpawnWarriors_Implementation()
 	}
 
 	AWarrior::NumberOfAI = NumberOfWarriors;
-	AWarrior::NumberOfHuman = NumberOfWarriors;
+	AWarrior::NumberOfHuman = NumberOfWarriors * 2; // Two Hooman-Affiliated teams.
 
 	UPoissonDisc::Flush();
 }

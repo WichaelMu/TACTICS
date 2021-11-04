@@ -70,3 +70,10 @@ void UMW::LogError(FString Message)
 	UE_LOG(LogTemp, Error, TEXT("%s"), * Message);
 }
 
+// Identical to C#'s null coalescing operator (??). Left ?? Right.
+template <typename T>
+T* UMW::Coalesce(T* Left, T* Right)
+{
+	return Left ? Left : Right;
+}
+

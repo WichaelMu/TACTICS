@@ -27,6 +27,9 @@ void AMultiplayer::InitGame(const FString& MapName, const FString& Options, FStr
 	{
 		UMW::LogError("AMultiplayer::No Map Generator!");
 	}
+
+	APawn* P1 = GetWorld()->SpawnActor<APawn>(DefaultPawnClass, FVector::ZeroVector, FRotator(0, -65.f, 65.f));
+	APawn* P2 = GetWorld()->SpawnActor<APawn>(DefaultPawnClass, FVector::ZeroVector, FRotator(0, -65.f, 65.f));
 }
 
 void AMultiplayer::RegisterMovement(AWarrior& WarriorToMove, ABlock& BlockDestination)

@@ -151,30 +151,38 @@ void AWarrior::ServerOnSpawn_Implementation(ABlock* SpawnedBlock, EAffiliation T
 // Move this warrior to TargetBlock.
 void AWarrior::MoveTo(ABlock* TargetBlock)
 {
-
+	UMW::Log("Is Being Called");
+	UMW::Log("Warrior count: " + FString::SanitizeFloat(NumberOfHuman));
 	switch (GetLocalRole())
 	{
 	case ROLE_Authority:
-		UMW::Log("AUTH");
+		UMW::Log("AWarrior::AUTH");
 		break;
 	case ROLE_AutonomousProxy:
-		UMW::Log("PROX");
+		UMW::Log("AWarrior::PROX");
 		break;
 	case ROLE_SimulatedProxy:
-		UMW::Log("SIMU");
+		UMW::Log("AWarrior::SIMU");
 		break;
 	case ROLE_None:
-		UMW::Log("NONE");
+		UMW::Log("AWarrior::NONE");
 		break;
 	case ROLE_MAX:
-		UMW::Log("MAX");
+		UMW::Log("AWarrior::MAX");
 		break;
 	default:
-		UMW::Log("WHAT");
+		UMW::Log("AWarrior::WHAT");
 	}
 
-	ServerMoveTo(TargetBlock);
-	//RegisterMovement(TargetBlock);
+	if (TargetBlock)
+	{
+		ServerMoveTo(TargetBlock);
+		RegisterMovement(TargetBlock);
+	}
+	else
+	{
+		UMW::LogError("AWarrior::MoveTo No TargetBlock");
+	}
 }
 
 
@@ -188,9 +196,10 @@ void AWarrior::ServerMoveTo_Implementation(ABlock* TargetBlock)
 		{
 			SetActorLocation(TargetBlock->GetWarriorPosition());
 		}
+
+		UpdateBlock(TargetBlock);
 	}
 
-	UpdateBlock(TargetBlock);
 	DealDamage();
 }
 
@@ -211,7 +220,6 @@ void AWarrior::ServerUpdateBlock_Implementation(ABlock* NewBlock)
 
 	NewBlock->Occupant = this;
 	CurrentBlock = NewBlock;
-	UMW::Log("UPDATE BLOCK");
 }
 
 // Update the attack references on the block.
@@ -320,25 +328,33 @@ bool AWarrior::HealthIsFatal()
 // Disassociate this warrior as part of Poly.
 void AWarrior::KillThisWarrior()
 {
-	// Deregister this Warrior as part of all warriors.
-	UMapMaker::Instance->AllWarriors.Remove(this);
+	ServerKillThisWarrior();
+}
 
-	// Move this warrior somewhere out of the screen.
-	SetActorLocation(FVector(40000.f));
-
-	// Deregister the Current Block's attacks and occupant.
-	CurrentBlock->DeductAttacks(Affiliation);
-	CurrentBlock->Occupant = nullptr;
-	CurrentBlock = nullptr;
-
-	// Reduce the number of Affiliation members.
-	if (Affiliation == EAffiliation::HUMAN1 || Affiliation == EAffiliation::HUMAN2)
+void AWarrior::ServerKillThisWarrior_Implementation()
+{
+	if (GetLocalRole() == ROLE_Authority)
 	{
-		NumberOfHuman--;
-	}
-	else
-	{
-		NumberOfAI--;
+		// Deregister this Warrior as part of all warriors.
+		UMapMaker::Instance->AllWarriors.Remove(this);
+
+		// Move this warrior somewhere out of the screen.
+		SetActorLocation(FVector(40000.f));
+
+		// Deregister the Current Block's attacks and occupant.
+		CurrentBlock->DeductAttacks(Affiliation);
+		CurrentBlock->Occupant = nullptr;
+		CurrentBlock = nullptr;
+
+		// Reduce the number of Affiliation members.
+		if (Affiliation == EAffiliation::HUMAN1 || Affiliation == EAffiliation::HUMAN2)
+		{
+			NumberOfHuman--;
+		}
+		else
+		{
+			NumberOfAI--;
+		}
 	}
 }
 
@@ -427,13 +443,32 @@ ABlock* AWarrior::FindKillableHuman()
 	if (NumberOfHuman == 0)
 	{
 		UMW::Log("AI HAS WON.");
-		return MoveTowardsBlock(ConcentrationOfHumans()); // Will default to centre.
+		ABlock* Winning = ConcentrationOfHumans();
+
+		if (Winning)
+		{
+			return MoveTowardsBlock(Winning); // Will default to centre.
+		}
+		else
+		{
+			UMW::LogError("AWarrior::FindKillableHuman No Winning");
+			return CurrentBlock;
+		}
 	}
 
 	// If this block is overwhelmed by humans, run away || stay out of range.
 	if (CurrentBlock->AIAttacked < CurrentBlock->HumanAttacked)
 	{
-		return FindSafestBlock();
+		ABlock* Safest = FindSafestBlock();
+
+		if (Safest)
+		{
+			return Safest;
+		}
+		else
+		{
+			UMW::LogError("AWarrior::FindKillableHuman No Safest");
+		}
 	}
 
 	TArray<ABlock*> Traversable = CurrentBlock->GetTraversableBlocks();
@@ -472,40 +507,84 @@ ABlock* AWarrior::FindKillableHuman()
 			// If still quite healthy, align to target Humans.
 			if (Health > 16)
 			{
-				ABlock* NearestHuman = FindNearestAffiliation(EAffiliation::HUMAN1);
+				ABlock* NearestHuman = FindNearestHumanAffiliation(EAffiliation::HUMAN1);
 
-				// If the block-distance to NearestHuman is greater than 6. Flank that position.
-				if (TNavigator<ABlock>::Pathfind(CurrentBlock, NearestHuman, UMapMaker::Instance->XMap * UMapMaker::Instance->YMap).Num() > 6)
+				if (NearestHuman)
 				{
-					return MoveTowardsBlock(Flank(NearestHuman));
-				}
+					// If the block-distance to NearestHuman is greater than 6. Flank that position.
+					if (TNavigator<ABlock>::Pathfind(CurrentBlock, NearestHuman, UMapMaker::Instance->XMap * UMapMaker::Instance->YMap).Num() > 6)
+					{
+						return MoveTowardsBlock(Flank(NearestHuman));
+					}
 
-				// Go towards NearestHuman.
-				return MoveTowardsBlock(NearestHuman);
+					// Go towards NearestHuman.
+					return MoveTowardsBlock(NearestHuman);
+				}
+				else
+				{
+					UMW::LogError("AWarrior::FindKillableHuman No NearestHuman");
+					return CurrentBlock;
+				}
 			}
 
 			// Otherwise, cohesion with group of AI.
-			return MoveTowardsBlock(ConcentrationOfAI());
+			ABlock* Cohesion = ConcentrationOfAI();
+
+			if (Cohesion)
+			{
+				return MoveTowardsBlock(Cohesion);
+			}
+			else
+			{
+				UMW::LogError("AWarrior::FindKillableHuman Desirable but No Cohesion");
+			}
 		}
 
 		// If AI has 2 more warriors than Human:
 		if (Evaluation >= 2)
 		{
 			// Align to nearest Human by prediction.
-			return MoveTowardsBlock(Flank(FindNearestAffiliation(EAffiliation::HUMAN1)));
+			ABlock* Alignment = Flank(FindNearestHumanAffiliation(EAffiliation::HUMAN1));
+
+			if (Alignment)
+			{
+				return MoveTowardsBlock(Alignment);
+			}
+			else
+			{
+				UMW::LogError("AWarrior::FindKillableHuman No Alignment");
+				return CurrentBlock;
+			}
 		}
 		else
 		{
 			// Cohesion with closest AI.
-			return MoveTowardsBlock(FindNearestAffiliation(EAffiliation::AI));
+
+			ABlock* Cohesion = FindNearestHumanAffiliation(EAffiliation::AI);
+			if (Cohesion)
+			{
+				return MoveTowardsBlock(Cohesion);
+			}
+			else
+			{
+				UMW::LogError("AWarrior::FindKillableHuman No Cohesion");
+			}
 		}
 	}
 
 	CurrentPath.Empty();
 
 	// Find a block that minimises the distance to an enemy.
-	ABlock* BestMove = MoveTowardsBlock(FindNearestAffiliation(EAffiliation::HUMAN1));
-	return BestMove;
+	ABlock* BestMove = MoveTowardsBlock(FindNearestHumanAffiliation(EAffiliation::HUMAN1));
+	if (BestMove)
+	{
+		return BestMove;
+	}
+	else
+	{
+		UMW::LogError("AWarrior::FindKillableHuman No Default.");
+		return CurrentBlock;
+	}
 }
 
 
@@ -563,7 +642,7 @@ ABlock* AWarrior::ConcentrationOfAI()
 }
 
 // Conducts a BFS to search for Nearest.
-ABlock* AWarrior::FindNearestAffiliation(const EAffiliation& Nearest)
+ABlock* AWarrior::FindNearestHumanAffiliation(const EAffiliation& Nearest)
 {
 	// AI has already won. Do not continue.
 	if (NumberOfHuman <= 0)
@@ -597,7 +676,7 @@ ABlock* AWarrior::FindNearestAffiliation(const EAffiliation& Nearest)
 			if (QueryBlock)
 			{
 				// The Nearest warrior has been found, exit.
-				if (QueryBlock->IsNextToAffiliation(Nearest))
+				if (QueryBlock->IsNextToAffiliation(EAffiliation::HUMAN1) || QueryBlock->IsNextToAffiliation(EAffiliation::HUMAN2))
 				{
 					// The block that is next to or in striking range of Nearest.
 					return QueryBlock;
@@ -615,7 +694,7 @@ ABlock* AWarrior::FindNearestAffiliation(const EAffiliation& Nearest)
 
 	// This is executed when BFS can't find a reachable Human.
 	// Go towards the largest concentration of Nearest instead. (At least try to get to the enemy).
-	return Nearest == EAffiliation::HUMAN1 ? ConcentrationOfHumans() : ConcentrationOfAI();
+	return Nearest == EAffiliation::HUMAN1 || Nearest == EAffiliation::HUMAN2 ? ConcentrationOfHumans() : ConcentrationOfAI();
 }
 
 
