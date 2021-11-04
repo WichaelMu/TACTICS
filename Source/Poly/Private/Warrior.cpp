@@ -11,13 +11,15 @@
 #include "DrawDebugHelpers.h"
 #include "MW.h"
 #include "Net/UnrealNetwork.h"
+#include "MapGenerator.h"
+#include "WarriorHealthWidget.h"
 
 
 // Sets default values
 AWarrior::AWarrior()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 
 	// Make a new cube root component.
@@ -43,7 +45,22 @@ AWarrior::AWarrior()
 	{
 		UE_LOG(LogTemp, Error, TEXT("COULD NOT FIND WARRIOR CUBE MESH!"));
 	}
-	
+
+	Health = 20;
+
+	UWarriorHealthWidget* TempHealthWidget = CreateDefaultSubobject<UWarriorHealthWidget>(TEXT("Warrior Health Component"));
+	if (TempHealthWidget)
+	{
+		TempHealthWidget->SetIsReplicated(true);
+		HealthWidget = TempHealthWidget;
+		HealthWidget->AttachTo(Cube);
+	}
+	else
+	{
+		UMW::LogError("AWarrior::AWarrior No TempHealthWidget");
+	}
+
+	SetHealthText(Health);
 }
 
 
@@ -53,10 +70,10 @@ void AWarrior::BeginPlay()
 	Super::BeginPlay();
 	
 
-	Health = 20;
+	SetHealthText(Health);
 
 	AssignAffiliationColours();
-	SetOwner(AMouseController::Instance);
+	SetOwner(AMapGenerator::Instance);
 }
 
 
@@ -89,30 +106,45 @@ void AWarrior::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 	DOREPLIFETIME(AWarrior, CurrentBlock);
 	DOREPLIFETIME(AWarrior, PreviousBlock);
 	DOREPLIFETIME(AWarrior, Affiliation);
+	DOREPLIFETIME(AWarrior, HealthWidget);
 }
 
 
 // When this warrior is spawned into the world.
 void AWarrior::OnSpawn(ABlock* SpawnedBlock, EAffiliation TeamAffiliation)
 {
+	ServerOnSpawn(SpawnedBlock, TeamAffiliation);
+}
+
+void AWarrior::ServerOnSpawn_Implementation(ABlock* SpawnedBlock, EAffiliation TeamAffiliation)
+{
+	Health = 20;
+
 	this->Affiliation = TeamAffiliation;
+	UMW::Log("AWarrior::OnSpawn Warrior Spawned");
 	if (SpawnedBlock)
 	{
 		// Default Previous and Current Block to the block this Warrior spawned on.
 		PreviousBlock = SpawnedBlock;
 		CurrentBlock = SpawnedBlock;
+		SpawnedBlock->Occupant = this;
 
 		// Change the location of this warrior.
 		SetActorLocation(SpawnedBlock->GetWarriorPosition());
+		UMW::Log("AWarrior::OnSpawn Updated");
 		UpdateBlock(SpawnedBlock);
 
 		// Defined in blueprint.
 		AssignAffiliationColours();
+
+		SetHealthText(Health);
 	}
 	else
 	{
 		UE_LOG(LogTemp, Error, TEXT("NO SPAWNED BLOCK."));
 	}
+
+	SpawnedBlock->Selected(true);
 }
 
 
@@ -120,7 +152,7 @@ void AWarrior::OnSpawn(ABlock* SpawnedBlock, EAffiliation TeamAffiliation)
 void AWarrior::MoveTo(ABlock* TargetBlock)
 {
 
-	switch (Role)
+	switch (GetLocalRole())
 	{
 	case ROLE_Authority:
 		UMW::Log("AUTH");
@@ -140,13 +172,21 @@ void AWarrior::MoveTo(ABlock* TargetBlock)
 	default:
 		UMW::Log("WHAT");
 	}
+
+	ServerMoveTo(TargetBlock);
+	//RegisterMovement(TargetBlock);
+}
+
+
+void AWarrior::ServerMoveTo_Implementation(ABlock* TargetBlock)
+{
+	UMW::Log("Move To");
 	// TODO: Change the location of the warrior with interpolation and pathfinding.
 	if (CurrentBlock)
 	{
 		if (CurrentBlock != TargetBlock)
 		{
 			SetActorLocation(TargetBlock->GetWarriorPosition());
-			ServerMoveTo(TargetBlock);
 		}
 	}
 
@@ -154,14 +194,14 @@ void AWarrior::MoveTo(ABlock* TargetBlock)
 	DealDamage();
 }
 
-
-void AWarrior::ServerMoveTo_Implementation(ABlock* TargetBlock)
-{
-	SetActorLocation(TargetBlock->GetWarriorPosition());
-}
-
 // Update block information when moving between blocks.
 void AWarrior::UpdateBlock(ABlock* NewBlock)
+{
+	ServerUpdateBlock(NewBlock);
+}
+
+
+void AWarrior::ServerUpdateBlock_Implementation(ABlock* NewBlock)
 {
 	PreviousBlock = CurrentBlock;
 
@@ -171,8 +211,8 @@ void AWarrior::UpdateBlock(ABlock* NewBlock)
 
 	NewBlock->Occupant = this;
 	CurrentBlock = NewBlock;
+	UMW::Log("UPDATE BLOCK");
 }
-
 
 // Update the attack references on the block.
 void AWarrior::UpdateBlockAttacks(ABlock* From, ABlock* To)
@@ -231,11 +271,28 @@ ABlock* AWarrior::MoveTowardsBlock(ABlock* Relative)
 }
 
 
+void AWarrior::SetHealthText(const int& NewHealth)
+{
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		if (HealthWidget)
+		{
+			HealthWidget->SetHealthText(NewHealth);
+		}
+		else
+		{
+			UMW::LogError("AWarrior::SetHealthText No Health Widget");
+		}
+	}
+}
+
 // Revive some health.
 int AWarrior::Revive()
 {
 	int NewHealth = FMath::Min<int>(Health + 1, 20);
 	Health = NewHealth;
+	SetHealthText(Health);
+
 	return NewHealth;
 }
 
@@ -244,6 +301,7 @@ int AWarrior::Revive()
 void AWarrior::DeductHealth()
 {
 	Health -= Damage;
+	SetHealthText(Health);
 
 	if (HealthIsFatal())
 	{

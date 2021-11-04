@@ -50,6 +50,8 @@ public:
 	static void UpdatePosition(const FVector2D& Position);
 
 	void SpawnWarriors();
+	UFUNCTION(Server, Reliable)
+		void ServerSpawnWarriors();
 
 
 protected:
@@ -159,9 +161,15 @@ private:
 	static int MapMidPoint();
 
 	void PlaceBlocks();
+	UFUNCTION(Server, Reliable)
+		void ServerPlaceBlocks();
 	void EvaluateBlockType(const float& Perlin, const int& X, const int& Y);
-	ABlock* SpawnBlock(UClass* Class, const int& X, const int& Y, EType TerrainType);
+	void SpawnBlock(UClass* Class, const int& X, const int& Y, EType TerrainType);
+	UFUNCTION(Server, Reliable)
+		void ServerSpawnBlock(UClass* Class, const int& X, const int& Y, EType TerrainType);
 	void ConnectBlocks();
+	UFUNCTION(Server, Reliable)
+		void ServerConnectBlocks();
 
 	ABlock* GetPoissonOrRandomBlock();
 
@@ -175,11 +183,15 @@ private:
 	TArray<int> ComputeEquator();
 
 
-	float TerrainOffset;
-	FVector2D CameraPosition;
+	UPROPERTY(Replicated)
+		float TerrainOffset;
+	UPROPERTY(Replicated)
+		FVector2D CameraPosition;
 	void UpdateChunks();
-	uint16 XExtent;
-	uint16 YExtent;
+	UPROPERTY(Replicated)
+		uint16 XExtent;
+	UPROPERTY(Replicated)
+		uint16 YExtent;
 
 	void ClearBlocks();
 };

@@ -3,6 +3,7 @@
 
 #include "Block.h"
 #include "MouseController.h"
+#include "EngineUtils.h"
 #include "MW.h"
 
 
@@ -126,12 +127,21 @@ void ABlock::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePr
 // Called using blueprint OnMouseClicked.
 void ABlock::OnBlockClicked()
 {
-	AMouseController::BlockClicked(this);
+	for (TActorIterator<AMouseController> it(GetWorld()); it; ++it)
+	{
+		(*it)->OnBlockClicked(this);
+	}
+	//AMouseController::BlockClicked(this);
 }
 
 
 // What happens if this block is marked as being selected.
 void ABlock::Selected(bool bSelected)
+{
+	ServerSelected(bSelected);
+}
+
+void ABlock::ServerSelected_Implementation(bool bSelected)
 {
 	// When selected.
 	if (bSelected)
@@ -139,7 +149,10 @@ void ABlock::Selected(bool bSelected)
 		//SetActorScale3D(FVector(.5f, .5f, .5f));
 
 		// Registers which Blocks are traversable.
-		AMouseController::Instance->Traversable = GetTraversableBlocks();
+		if (AMouseController::Instance)
+		{
+			//AMouseController::Instance->Traversable = GetTraversableBlocks();
+		}
 	}
 
 	// Show the white tiles?

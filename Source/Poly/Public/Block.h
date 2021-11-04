@@ -71,9 +71,12 @@ public:
 	// This block's world position.
 	FVector GetWorldPosition() override { return GetActorLocation(); }
 	// This block's position for a warrior.
-	FVector GetWarriorPosition() { return GetWorldPosition() + FVector(0, 0, 100); }
+	UFUNCTION(BlueprintCallable)
+		FVector GetWarriorPosition() { return GetWorldPosition() + FVector(0, 0, 100); }
 	// Mark this block as selected?
 	void Selected(bool);
+	UFUNCTION(Server, Reliable, NetMulticast)
+		void ServerSelected(bool bSelected);
 	UFUNCTION(BlueprintImplementableEvent)
 		void SetTraversableVisibility(bool bShow);
 

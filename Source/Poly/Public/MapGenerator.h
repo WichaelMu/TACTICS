@@ -7,6 +7,7 @@
 #include "MapGenerator.generated.h"
 
 class UMapMaker;
+class UWarriorSpawner;
 
 UCLASS()
 class POLY_API AMapGenerator : public AActor
@@ -19,6 +20,8 @@ public:
 
 public:
 
+	static AMapGenerator* Instance;
+
 	void Tick(float DeltaTime) override;
 
 	virtual bool ShouldTickIfViewportsOnly() const override;
@@ -27,10 +30,17 @@ public:
 		bool bGenerateMap;
 
 	void InitialiseGame();
+	UFUNCTION(Server, Reliable)
+		void ServerInitialiseGame();
 
 public:
 
 	UPROPERTY(VisibleAnywhere)
 		UMapMaker* MapMaker;
+	UPROPERTY(VisibleAnywhere)
+		UWarriorSpawner* WarriorSpawner;
 
 };
+
+
+AMapGenerator* AMapGenerator::Instance = nullptr;

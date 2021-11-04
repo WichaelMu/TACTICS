@@ -17,11 +17,7 @@ void AMultiplayer::InitGame(const FString& MapName, const FString& Options, FStr
 
 	UMW::Log("Game Started...");
 
-	AMapGenerator* MapGenerator = nullptr;
-	for (TActorIterator<AMapGenerator> it(GetWorld()); it; ++it)
-	{
-		MapGenerator = *it;
-	}
+	AMapGenerator* MapGenerator = GetWorld()->SpawnActor<AMapGenerator>();
 
 	if (MapGenerator)
 	{
@@ -31,11 +27,20 @@ void AMultiplayer::InitGame(const FString& MapName, const FString& Options, FStr
 	{
 		UMW::LogError("AMultiplayer::No Map Generator!");
 	}
-
-	UE_LOG(LogTemp, Error, TEXT("WHAT IS HAPPENING"));
 }
 
 void AMultiplayer::RegisterMovement(AWarrior& WarriorToMove, ABlock& BlockDestination)
 {
 	WarriorToMove.SetActorLocation(BlockDestination.GetWarriorPosition());
+	UMW::Log("AMultiplayer::RegisterMovement Called");
+}
+
+void AMultiplayer::RegisterController(AController* Controller)
+{
+	APawn* Player = GetWorld()->SpawnActor<APawn>(DefaultPawnClass, FVector::ZeroVector, FRotator(0, -65.f, 65.f));
+
+	if (Controller && Player)
+	{
+		Controller->Possess(Player);
+	}
 }

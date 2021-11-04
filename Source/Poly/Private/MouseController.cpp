@@ -8,6 +8,7 @@
 #include "Block.h"
 #include "MapMaker.h"
 #include "Net/UnrealNetwork.h"
+#include "Multiplayer.h"
 
 
 // Sets default values
@@ -28,6 +29,35 @@ void AMouseController::BeginPlay()
 	Super::BeginPlay();
 
 	MoveAmplifier = MinimumCameraMovementSpeed * 4;
+
+	SetActorRotation(FRotator(-65.f, 65.f, 0.f));
+
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		auto GameMode = GetWorld()->GetAuthGameMode();
+		if (GameMode)
+		{
+			AMultiplayer* MultiplayerGameMode = Cast<AMultiplayer>(GameMode);
+
+			if (MultiplayerGameMode)
+			{
+				Multiplayer = MultiplayerGameMode;
+				UMW::Log("Found MP GM");
+			}
+			else
+			{
+				UMW::LogError("AMouseController::BeginPlay No MultiplayerGameMode");
+			}
+		}
+		else
+		{
+			UMW::LogError("AMouseController::BeginPlay No GameMode");
+		}
+	}
+	else
+	{
+		UMW::LogError("AMouseController::BeginPlay Not Authority");
+	}
 }
 
 
@@ -55,6 +85,11 @@ void AMouseController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	// ...
 
 	DOREPLIFETIME(AMouseController, Traversable);
+	DOREPLIFETIME(AMouseController, MoveAmplifier);
+	DOREPLIFETIME(AMouseController, Multiplayer);
+	DOREPLIFETIME(AMouseController, CurrentlySelectedBlock);
+	DOREPLIFETIME(AMouseController, CurrentlySelectedWarrior);
+	DOREPLIFETIME(AMouseController, AlreadyMovedWarriors);
 }
 
 
@@ -122,7 +157,7 @@ void AMouseController::ServerThrottle_Implementation(const float& Throw)
 
 void AMouseController::ServerRise_Implementation(const float& Throw)
 {
-	SetActorLocation(GetActorLocation() + GetActorUpVector() * Throw * MoveAmplifier * GetWorld()->GetDeltaSeconds());
+	SetActorLocation(GetActorLocation() + FVector::UpVector * Throw * MoveAmplifier * GetWorld()->GetDeltaSeconds());
 }
 
 
@@ -188,9 +223,23 @@ void AMouseController::BlockClicked(ABlock* ClickedBlock)
 	}
 }
 
+void AMouseController::OnBlockClicked(ABlock* ClickedBlock)
+{
+	if (GetLocalRole() == ROLE_AutonomousProxy)
+	{
+		CallByBlock(ClickedBlock);
+	}
+}
+
 
 // What happens when a block is clicked?
 void AMouseController::CallByBlock(ABlock* ClickedBlock)
+{
+	ServerCallByBlock(ClickedBlock);
+}
+
+
+void AMouseController::ServerCallByBlock_Implementation(ABlock* ClickedBlock)
 {
 	// If the most recently clicked block is not the previously clicked block.
 	if (CurrentlySelectedBlock != ClickedBlock)
@@ -200,7 +249,7 @@ void AMouseController::CallByBlock(ABlock* ClickedBlock)
 
 		// Do what needs to be done on the second press.
 		LMBPressed(ClickedBlock);
-		
+
 		if (CurrentlySelectedBlock)
 		{
 			CurrentlySelectedBlock = ClickedBlock;
@@ -217,24 +266,35 @@ void AMouseController::CallByBlock(ABlock* ClickedBlock)
 	}
 }
 
-
 /// <summary>What happens if an ABlock is clicked?</summary>
 /// <param name="ClickedBlock">The ABlock that was clicked.</param>
 void AMouseController::LMBPressed(ABlock* ClickedBlock)
 {
+	ServerLMBPressed(ClickedBlock);
+}
+
+
+void AMouseController::ServerLMBPressed_Implementation(ABlock* ClickedBlock)
+{
+	UMW::Log("1");
 	// If a block is already selected.
 	if (CurrentlySelectedBlock)
 	{
+		UMW::Log("2");
 		// Mark the block for deselection.
 		CurrentlySelectedBlock->Selected(false);
-		
+
 		if (CurrentlySelectedWarrior)
 		{
+			UMW::Log("3");
 			if (!ClickedBlock->Occupant)
 			{
+				UMW::Log("4");
 				// If the clicked block is traversable and the selected warrior has not already moved.
 				if (Traversable.Contains(ClickedBlock) && !AlreadyMovedWarriors.Contains(CurrentlySelectedWarrior))
 				{
+					UMW::Log("5");
+
 					// Allow movement.
 					CurrentlySelectedWarrior->MoveTo(ClickedBlock);
 
@@ -243,7 +303,7 @@ void AMouseController::LMBPressed(ABlock* ClickedBlock)
 				}
 			}
 		}
-
+		UMW::Log("6");
 		// Disallow any other warriors from moving to a previously traversable block.
 		ClearTraversable();
 
@@ -252,18 +312,23 @@ void AMouseController::LMBPressed(ABlock* ClickedBlock)
 	}
 	else // If there is no selected block.
 	{
+		UMW::Log("7");
 		// Don't do anything if the clicked block is NOT occupied.
 		if (ClickedBlock->Occupant)
 		{
+			UMW::Log("8");
 			// If the clicked block's occupant is the on the current turn's affiliation.
 			if (ClickedBlock->Occupant->Affiliation == CurrentTurn)
 			{
+				UMW::Log("9");
 				if (!AlreadyMovedWarriors.Contains(ClickedBlock->Occupant))
 				{
+					UMW::Log("10");
 					// Set the selected block to the clicked block.
 					CurrentlySelectedBlock = ClickedBlock;
 					// Mark it for selection.
 					CurrentlySelectedBlock->Selected(true);
+					Traversable = CurrentlySelectedBlock->GetTraversableBlocks();
 
 					// Select this block's warrior.
 					CurrentlySelectedWarrior = ClickedBlock->Occupant;
@@ -271,10 +336,16 @@ void AMouseController::LMBPressed(ABlock* ClickedBlock)
 			}
 		}
 	}
+
+	UMW::Log("OUT");
 }
 
-
 void AMouseController::ClearTraversable()
+{
+	ServerClearTraversable();
+}
+
+void AMouseController::ServerClearTraversable_Implementation()
 {
 	// Deselect all traversable blocks. Maximum is 25.
 	for (ABlock* Allowed : Traversable)

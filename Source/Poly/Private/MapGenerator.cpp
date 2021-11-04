@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "MapMaker.h"
 #include "MW.h"
+#include "WarriorSpawner.h"
 
 // Sets default values
 AMapGenerator::AMapGenerator()
@@ -18,7 +19,7 @@ AMapGenerator::AMapGenerator()
 	USceneComponent* SceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Map Generator"));
 	RootComponent = SceneComponent;
 
-	MapMaker = CreateDefaultSubobject<UMapMaker>(TEXT("Map Maker Logic"));
+	MapMaker = CreateDefaultSubobject<UMapMaker>(TEXT("Map Maker Logic"));\
 
 	if (MapMaker)
 	{
@@ -61,9 +62,16 @@ bool AMapGenerator::ShouldTickIfViewportsOnly() const
 
 void AMapGenerator::InitialiseGame()
 {
+	ServerInitialiseGame();
+
+	Instance = this;
+}
+
+void AMapGenerator::ServerInitialiseGame_Implementation()
+{
 	if (MapMaker && GetLocalRole() == ROLE_Authority)
 	{
-		MapMaker->SpawnWarriors();
+		MapMaker->GenerateBlocks();
 	}
 	else
 	{

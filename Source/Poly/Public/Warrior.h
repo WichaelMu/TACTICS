@@ -8,6 +8,7 @@
 
 class UStaticMeshComponent;
 class ABlock;
+class UWarriorHealthWidget;
 
 UENUM(BlueprintType)
 enum class EAffiliation : uint8 { HUMAN1, HUMAN2, AI };
@@ -38,6 +39,8 @@ public:
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void OnSpawn(ABlock* SpawnedBlock, EAffiliation TeamAffiliation);
+	UFUNCTION(Server, Reliable)
+		void ServerOnSpawn(ABlock* SpawnedBlock, EAffiliation TeamAffiliation);
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -46,14 +49,22 @@ public:
 		UStaticMeshComponent* RootMesh;
 
 	void MoveTo(ABlock* TargetBlock);
-	UFUNCTION(Server, Reliable)
+	UFUNCTION(Server, Reliable, NetMulticast)
 		void ServerMoveTo(ABlock* TargetBlock);
+	UFUNCTION(BlueprintImplementableEvent)
+		void RegisterMovement(ABlock* TargetBlock);
+	UFUNCTION(BlueprintCallable)
 	void UpdateBlock(ABlock* NewBlock);
+	UFUNCTION(Server, Reliable, NetMulticast)
+		void ServerUpdateBlock(ABlock* NewBlock);
 	void UpdateBlockAttacks(ABlock* Departing, ABlock* Arriving);
 
 
 	UPROPERTY(Replicated, VisibleAnywhere, Category = Health)
 		int Health;
+	void SetHealthText(const int& NewHealth);
+	UPROPERTY(Replicated)
+		UWarriorHealthWidget* HealthWidget;
 	int Revive();
 	// The damage this warrior will deal.
 	const float Damage = 2;
@@ -106,7 +117,8 @@ private:
 	ABlock* FindNearestAffiliation(const EAffiliation& Nearest);
 	TArray<ABlock*> CurrentPath;
 
-	void DealDamage();
+	UFUNCTION(BlueprintCallable)
+		void DealDamage();
 	bool HealthIsFatal();
 	void KillThisWarrior();
 

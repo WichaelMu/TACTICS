@@ -8,6 +8,7 @@
 #include "MW.h"
 #include "PoissonDisc.h"
 #include "Net/UnrealNetwork.h"
+#include "UObject/ConstructorHelpers.h"
 
 
 // Sets default values for this component's properties
@@ -38,17 +39,114 @@ UMapMaker::UMapMaker()
 	StoneLimits    = .65f;
 	MountainLimits = 1.f;
 
+	EquatorInfluence = 5;
 	EquatorBias	 = 10.f;
 	EquatorStrength  = 15.f;
 	EquatorSpread	 = .45f;
 	EquatorScale = .15f;
 
+	bGeneratePoissonSpawning = true;
 	IterationsBeforeRejection = 30;
 	MinimumDistance		  = 3;
 
 	TerrainSeed = 0;
 	ContinentsSeed = 0;
 	EquatorSeed = 0;
+
+	XMap = 25;
+	YMap = 25;
+
+	NumberOfWarriors = 3;
+
+	static ConstructorHelpers::FClassFinder<ABlock> SandBlock(TEXT("/Game/Blueprints/BP_Sand"));
+	if (SandBlock.Succeeded())
+	{
+		Sand = SandBlock.Class;
+	}
+	else
+	{
+		UMW::LogError("UMapMaker::MapMaker FClassFinder Failed on Sand");
+	}
+
+	static ConstructorHelpers::FClassFinder<ABlock> ShallowBlock(TEXT("/Game/Blueprints/BP_Shallow"));
+	if (ShallowBlock.Succeeded())
+	{
+		Shallow = ShallowBlock.Class;
+	}
+	else
+	{
+		UMW::LogError("UMapMaker::MapMaker FClassFinder Failed on Shallow");
+	}
+
+	static ConstructorHelpers::FClassFinder<ABlock> WaterBlock(TEXT("/Game/Blueprints/BP_Water"));
+	if (WaterBlock.Succeeded())
+	{
+		Water = WaterBlock.Class;
+	}
+	else
+	{
+		UMW::LogError("UMapMaker::MapMaker FClassFinder Failed on Water");
+	}
+
+	static ConstructorHelpers::FClassFinder<ABlock> BlockBlock(TEXT("/Game/Blueprints/BP_Block"));
+	if (BlockBlock.Succeeded())
+	{
+		Block = BlockBlock.Class;
+	}
+	else
+	{
+		UMW::LogError("UMapMaker::MapMaker FClassFinder Failed on Block");
+	}
+
+	static ConstructorHelpers::FClassFinder<ABlock> GrassBlock(TEXT("/Game/Blueprints/BP_Grass"));
+	if (GrassBlock.Succeeded())
+	{
+		Grass = GrassBlock.Class;
+	}
+	else
+	{
+		UMW::LogError("UMapMaker::MapMaker FClassFinder Failed on Grass");
+	}
+
+	static ConstructorHelpers::FClassFinder<ABlock> StoneBlock(TEXT("/Game/Blueprints/BP_Stone"));
+	if (StoneBlock.Succeeded())
+	{
+		Stone = StoneBlock.Class;
+	}
+	else
+	{
+		UMW::LogError("UMapMaker::MapMaker FClassFinder Failed on Stone");
+	}
+
+	static ConstructorHelpers::FClassFinder<ABlock> MountainBlock(TEXT("/Game/Blueprints/BP_Mountain"));
+	if (MountainBlock.Succeeded())
+	{
+		Mountain = MountainBlock.Class;
+	}
+	else
+	{
+		UMW::LogError("UMapMaker::MapMaker FClassFinder Failed on Mountain");
+	}
+
+	static ConstructorHelpers::FClassFinder<ABlock> DesertBlock(TEXT("/Game/Blueprints/BP_Desert"));
+	if (DesertBlock.Succeeded())
+	{
+		Desert = DesertBlock.Class;
+	}
+	else
+	{
+		UMW::LogError("UMapMaker::MapMaker FClassFinder Failed on Desert");
+	}
+
+	static ConstructorHelpers::FClassFinder<AWarrior> WarriorToSpawn(TEXT("/Game/Blueprints/BP_Warrior"));
+	if (WarriorToSpawn.Succeeded())
+	{
+		Warrior = WarriorToSpawn.Class;
+	}
+	else
+	{
+		UMW::LogError("UMapMaker::MapMaker FClassFinder Failed on Warrior");
+	}
 }
 
 
@@ -172,6 +270,11 @@ int UMapMaker::MapMidPoint()
 
 void UMapMaker::PlaceBlocks()
 {
+	ServerPlaceBlocks();
+}
+
+void UMapMaker::ServerPlaceBlocks_Implementation()
+{
 	float Offset = TerrainSeed == 0 ? 11374265.43f : TerrainSeed;
 	UMW::Log("Terrain Seed: " + FString::SanitizeFloat(Offset) + " at " + FString::SanitizeFloat(TerrainScale) + " Scale.");
 	TerrainOffset = Offset;
@@ -263,14 +366,18 @@ void UMapMaker::EvaluateBlockType(const float& Perlin, const int& X, const int& 
 
 
 // Spawns a block into the world and initialises it.
-ABlock* UMapMaker::SpawnBlock(UClass* Class, const int& X, const int& Y, EType TerrainType)
+void UMapMaker::SpawnBlock(UClass* Class, const int& X, const int& Y, EType TerrainType)
+{
+	ServerSpawnBlock(Class, X, Y, TerrainType);
+}
+
+
+void UMapMaker::ServerSpawnBlock_Implementation(UClass* Class, const int& X, const int& Y, EType TerrainType)
 {
 	ABlock* NewBlock = GetWorld()->SpawnActor<ABlock>(Class, FVector(X * 100, Y * 100, 0), FRotator::ZeroRotator);
 	Map.Add(NewBlock);
 	NewBlock->Index = Y * XMap + X;
 	NewBlock->Type = TerrainType;
-
-	return NewBlock;
 }
 
 
@@ -515,6 +622,11 @@ float UMapMaker::Transition(const float& V, const float& A, const float& B)
 
 void UMapMaker::ConnectBlocks()
 {
+	ServerConnectBlocks();
+}
+
+void UMapMaker::ServerConnectBlocks_Implementation()
+{
 	// Do not connect blocks if there warriors are not requested.
 	if (NumberOfWarriors == 0) { return; }
 
@@ -532,24 +644,24 @@ void UMapMaker::ConnectBlocks()
 			}
 
 			//	North
-			if (IsIndexInMapRange(x	   , y + 1, Index)) { Map[Index]->North		= Map[ Index      + YMap];	}
+			if (IsIndexInMapRange(x, y + 1, Index)) { Map[Index]->North = Map[Index + YMap]; }
 			//	North-East
-			if (IsIndexInMapRange(x - 1, y + 1, Index)) { Map[Index]->NorthEast	= Map[(Index - 1) + YMap];	}
+			if (IsIndexInMapRange(x - 1, y + 1, Index)) { Map[Index]->NorthEast = Map[(Index - 1) + YMap]; }
 			//	North-West
-			if (IsIndexInMapRange(x + 1, y + 1, Index)) { Map[Index]->NorthWest	= Map[(Index + 1) + YMap];	}
+			if (IsIndexInMapRange(x + 1, y + 1, Index)) { Map[Index]->NorthWest = Map[(Index + 1) + YMap]; }
 
 			//	South
-			if (IsIndexInMapRange(x    , y - 1, Index)) { Map[Index]->South		= Map[ Index      - YMap];	}
+			if (IsIndexInMapRange(x, y - 1, Index)) { Map[Index]->South = Map[Index - YMap]; }
 			//	South-East
-			if (IsIndexInMapRange(x - 1, y - 1, Index)) { Map[Index]->SouthEast	= Map[(Index - 1) - YMap];	}
+			if (IsIndexInMapRange(x - 1, y - 1, Index)) { Map[Index]->SouthEast = Map[(Index - 1) - YMap]; }
 			//	South-West
-			if (IsIndexInMapRange(x + 1, y - 1, Index)) { Map[Index]->SouthWest	= Map[(Index + 1) - YMap];	}
+			if (IsIndexInMapRange(x + 1, y - 1, Index)) { Map[Index]->SouthWest = Map[(Index + 1) - YMap]; }
 
 			//	East
-			if (IsIndexInMapRange(x - 1, y    , Index)) { Map[Index]->East		= Map[ Index - 1];		}
+			if (IsIndexInMapRange(x - 1, y, Index)) { Map[Index]->East = Map[Index - 1]; }
 
 			//	West
-			if (IsIndexInMapRange(x + 1, y    , Index)) { Map[Index]->West		= Map[ Index + 1];		}
+			if (IsIndexInMapRange(x + 1, y, Index)) { Map[Index]->West = Map[Index + 1]; }
 		}
 	}
 }
@@ -585,6 +697,11 @@ bool UMapMaker::IsIndexInMapRange(const uint16& X, const uint16& Y, const uint16
 // Spawns 1 warrior for each affiliation for NumberOfWarrior times.
 void UMapMaker::SpawnWarriors()
 {
+	ServerSpawnWarriors();
+}
+
+void UMapMaker::ServerSpawnWarriors_Implementation()
+{
 	// Static T template's memory persist. Flush the Poisson Disc occupancy.
 	UPoissonDisc::Flush();
 
@@ -596,19 +713,19 @@ void UMapMaker::SpawnWarriors()
 		ABlock* PoissonSpawnPoint = GetPoissonOrRandomBlock();
 
 		AWarrior* SpawnedWarrior1 = GetWorld()->SpawnActor<AWarrior>(Warrior, FVector::ZeroVector, FRotator::ZeroRotator);
-		SpawnedWarrior1->OnSpawn(PoissonSpawnPoint, EAffiliation::HUMAN1);
+		SpawnedWarrior1->ServerOnSpawn(PoissonSpawnPoint, EAffiliation::HUMAN1);
 		AllWarriors.Add(SpawnedWarrior1);
 
 		PoissonSpawnPoint = GetPoissonOrRandomBlock();
 
 		AWarrior* SpawnedWarrior2 = GetWorld()->SpawnActor<AWarrior>(Warrior, FVector::ZeroVector, FRotator::ZeroRotator);
-		SpawnedWarrior2->OnSpawn(PoissonSpawnPoint, EAffiliation::HUMAN2);
+		SpawnedWarrior2->ServerOnSpawn(PoissonSpawnPoint, EAffiliation::HUMAN2);
 		AllWarriors.Add(SpawnedWarrior2);
 
 		PoissonSpawnPoint = GetPoissonOrRandomBlock();
 
 		AWarrior* SpawnedWarrior3 = GetWorld()->SpawnActor<AWarrior>(Warrior, FVector::ZeroVector, FRotator::ZeroRotator);
-		SpawnedWarrior3->OnSpawn(PoissonSpawnPoint, EAffiliation::AI);
+		SpawnedWarrior3->ServerOnSpawn(PoissonSpawnPoint, EAffiliation::AI);
 		AllWarriors.Add(SpawnedWarrior3);
 	}
 
@@ -654,14 +771,17 @@ void UMapMaker::GenerateBlocks()
 		UE_LOG(LogTemp, Error, TEXT("NO BLOCK"));
 		return;
 	}
+
 	UMW::Log("Generating...");
 	ClearBlocks();
+	AllWarriors.Empty();
 
 	XExtent = XMap - 1;
 	YExtent = YMap - 1;
 
 	PlaceBlocks();
 	ConnectBlocks();
+	SpawnWarriors();
 }
 
 // A random block in Map.
@@ -679,6 +799,58 @@ void UMapMaker::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetim
 	// ...
 
 	DOREPLIFETIME(UMapMaker, Map);
+	DOREPLIFETIME(UMapMaker, AllWarriors);
+	DOREPLIFETIME(UMapMaker, XMap);
+	DOREPLIFETIME(UMapMaker, YMap);
+
+	DOREPLIFETIME(UMapMaker, bUseFalloffMap);
+	DOREPLIFETIME(UMapMaker, FalloffBias);
+	DOREPLIFETIME(UMapMaker, CurveStrength);
+
+	DOREPLIFETIME(UMapMaker, bGenerateContinents);
+	DOREPLIFETIME(UMapMaker, ContinentsSeed);
+	DOREPLIFETIME(UMapMaker, SplitLimit);
+	DOREPLIFETIME(UMapMaker, SplitDistance);
+	DOREPLIFETIME(UMapMaker, SplitScale);
+
+	DOREPLIFETIME(UMapMaker, bComputeEquatorialEnvironment);
+	DOREPLIFETIME(UMapMaker, EquatorSeed);
+	DOREPLIFETIME(UMapMaker, EquatorInfluence);
+	DOREPLIFETIME(UMapMaker, EquatorBias);
+	DOREPLIFETIME(UMapMaker, EquatorStrength);
+	DOREPLIFETIME(UMapMaker, EquatorSpread);
+	DOREPLIFETIME(UMapMaker, EquatorScale);
+	DOREPLIFETIME(UMapMaker, Desert);
+
+	DOREPLIFETIME(UMapMaker, bGeneratePoissonSpawning);
+	DOREPLIFETIME(UMapMaker, IterationsBeforeRejection);
+	DOREPLIFETIME(UMapMaker, MinimumDistance);
+
+	DOREPLIFETIME(UMapMaker, Sand);
+	DOREPLIFETIME(UMapMaker, Shallow);
+	DOREPLIFETIME(UMapMaker, Water);
+	DOREPLIFETIME(UMapMaker, Block);
+	DOREPLIFETIME(UMapMaker, Grass);
+	DOREPLIFETIME(UMapMaker, Stone);
+	DOREPLIFETIME(UMapMaker, Mountain);
+
+	DOREPLIFETIME(UMapMaker, WaterLimits);
+	DOREPLIFETIME(UMapMaker, ShallowLimits);
+	DOREPLIFETIME(UMapMaker, SandLimits);
+	DOREPLIFETIME(UMapMaker, GrassLimits);
+	DOREPLIFETIME(UMapMaker, StoneLimits);
+	DOREPLIFETIME(UMapMaker, MountainLimits);
+
+	DOREPLIFETIME(UMapMaker, TerrainScale);
+	DOREPLIFETIME(UMapMaker, TerrainSeed);
+
+	DOREPLIFETIME(UMapMaker, Warrior);
+	DOREPLIFETIME(UMapMaker, NumberOfWarriors);
+
+	DOREPLIFETIME(UMapMaker, TerrainOffset);
+	DOREPLIFETIME(UMapMaker, CameraPosition);
+	DOREPLIFETIME(UMapMaker, XExtent);
+	DOREPLIFETIME(UMapMaker, YExtent);
 }
 
 

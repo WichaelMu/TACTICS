@@ -9,6 +9,7 @@
 #include "MouseController.generated.h"
 
 class ABlock;
+class AMultiplayer;
 
 /**
 * Handles the clicking of the mouse, selection of blocks and *not yet* controls the movement.
@@ -34,6 +35,7 @@ public:
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	static void BlockClicked(ABlock*);
+	void OnBlockClicked(ABlock* ClickedBlock);
 	static AMouseController* Instance;
 	static EAffiliation CurrentTurn;
 
@@ -50,7 +52,8 @@ private:
 	void Forward(float Throw);
 	void Right(float Throw);
 
-	float MoveAmplifier;
+	UPROPERTY(Replicated)
+		float MoveAmplifier;
 	void Throttle(float Throw);
 
 	void Rise(float Throw);
@@ -69,13 +72,25 @@ private:
 		float MinimumCameraMovementSpeed;
 
 	void CallByBlock(ABlock* ClickedBlock);
+	UFUNCTION(Server, Reliable, NetMulticast)
+		void ServerCallByBlock(ABlock* ClickedBlock);
 	void LMBPressed(ABlock* ClickedBlock);
+	UFUNCTION(Server, Reliable, NetMulticast)
+		void ServerLMBPressed(ABlock* ClickedBlock);
 	void ClearTraversable();
+	UFUNCTION(Server, Reliable, NetMulticast)
+		void ServerClearTraversable();
 
-	ABlock* CurrentlySelectedBlock = nullptr;
-	AWarrior* CurrentlySelectedWarrior = nullptr;
+	UPROPERTY(Replicated)
+		ABlock* CurrentlySelectedBlock = nullptr;
+	UPROPERTY(Replicated)
+		AWarrior* CurrentlySelectedWarrior = nullptr;
 	
-	TSet<AWarrior*> AlreadyMovedWarriors;
+	UPROPERTY(Replicated)
+		TSet<AWarrior*> AlreadyMovedWarriors;
+
+	UPROPERTY(Replicated)
+		AMultiplayer* Multiplayer;
 };
 
 
