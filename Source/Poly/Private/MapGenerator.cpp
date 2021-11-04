@@ -19,7 +19,7 @@ AMapGenerator::AMapGenerator()
 	USceneComponent* SceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Map Generator"));
 	RootComponent = SceneComponent;
 
-	MapMaker = CreateDefaultSubobject<UMapMaker>(TEXT("Map Maker Logic"));\
+	MapMaker = CreateDefaultSubobject<UMapMaker>(TEXT("Map Maker Logic"));
 
 	if (MapMaker)
 	{

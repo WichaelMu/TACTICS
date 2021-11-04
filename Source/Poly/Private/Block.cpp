@@ -387,6 +387,12 @@ bool ABlock::IsNextToAffiliation(const EAffiliation& RelativeTo)
 /// <param name="DeductingAffiliation">The Affiliation to deduct from.</param>
 void ABlock::DeductAttacks(EAffiliation DeductingAffiliation)
 {
+	ServerDeductAttacks(DeductingAffiliation);
+}
+
+
+void ABlock::ServerDeductAttacks_Implementation(EAffiliation DeductingAffiliation)
+{
 	// Attacking range is 3. (Movement Range = 2, Attacking Range = 1).
 	// Do not ignore occupants, we need to deduct from blocks regardless of occupancy.
 	TArray<ABlock*> Depth = SearchAtDepth(3, false);
@@ -418,10 +424,14 @@ void ABlock::DeductAttacks(EAffiliation DeductingAffiliation)
 	}
 }
 
-
 /// <summary>Append the attacking heuristic.</summary>
 /// <param name="DeductingAffiliation">The Affiliation to append to.</param>
 void ABlock::AppendAttacks(EAffiliation AppendingAffiliation)
+{
+	ServerAppendAttacks(AppendingAffiliation);
+}
+
+void ABlock::ServerAppendAttacks_Implementation(EAffiliation AppendingAffiliation)
 {
 	// Attacking range is 3. (Movement Range = 2, Attacking Range = 1).
 	// Do not ignore occupants, we need to deduct from blocks regardless of occupancy.

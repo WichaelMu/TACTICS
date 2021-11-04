@@ -13,6 +13,7 @@
 #include "Net/UnrealNetwork.h"
 #include "MapGenerator.h"
 #include "WarriorHealthWidget.h"
+#include "Multiplayer.h"
 
 
 // Sets default values
@@ -48,7 +49,7 @@ AWarrior::AWarrior()
 
 	Health = 20;
 
-	UWarriorHealthWidget* TempHealthWidget = CreateDefaultSubobject<UWarriorHealthWidget>(TEXT("Warrior Health Component"));
+	/*UWarriorHealthWidget* TempHealthWidget = CreateDefaultSubobject<UWarriorHealthWidget>(TEXT("Warrior Health Component"));
 	if (TempHealthWidget)
 	{
 		TempHealthWidget->SetIsReplicated(true);
@@ -60,7 +61,9 @@ AWarrior::AWarrior()
 		UMW::LogError("AWarrior::AWarrior No TempHealthWidget");
 	}
 
-	SetHealthText(Health);
+	SetHealthText(Health);*/
+
+	Identifier = 0;
 }
 
 
@@ -107,6 +110,7 @@ void AWarrior::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 	DOREPLIFETIME(AWarrior, PreviousBlock);
 	DOREPLIFETIME(AWarrior, Affiliation);
 	DOREPLIFETIME(AWarrior, HealthWidget);
+	DOREPLIFETIME(AWarrior, Identifier);
 }
 
 
@@ -131,13 +135,16 @@ void AWarrior::ServerOnSpawn_Implementation(ABlock* SpawnedBlock, EAffiliation T
 
 		// Change the location of this warrior.
 		SetActorLocation(SpawnedBlock->GetWarriorPosition());
-		UMW::Log("AWarrior::OnSpawn Updated");
+		
 		UpdateBlock(SpawnedBlock);
 
 		// Defined in blueprint.
 		AssignAffiliationColours();
 
 		SetHealthText(Health);
+
+		FVector Location = GetActorLocation();
+		Identifier = (int)Location.X ^ ((int)Location.Y << 2) ^ ((int)Location.Z >> 2);
 	}
 	else
 	{
@@ -176,8 +183,45 @@ void AWarrior::MoveTo(ABlock* TargetBlock)
 
 	if (TargetBlock)
 	{
-		ServerMoveTo(TargetBlock);
-		RegisterMovement(TargetBlock);
+		if (GetLocalRole() == ROLE_Authority)
+		{
+			ServerMoveTo(TargetBlock);
+		}
+		else
+		{
+			UMW::LogError("This Warrior is not Authority");
+			AWarrior* Authority = GetSelfWithAuthority();
+			if (Authority)
+			{
+				switch (Authority->GetLocalRole())
+				{
+				case ROLE_Authority:
+					UMW::Log("Spoof::AUTH");
+					break;
+				case ROLE_AutonomousProxy:
+					UMW::Log("Spoof::PROX");
+					break;
+				case ROLE_SimulatedProxy:
+					UMW::Log("Spoof::SIMU");
+					break;
+				case ROLE_None:
+					UMW::Log("Spoof::NONE");
+					break;
+				case ROLE_MAX:
+					UMW::Log("Spoof::MAX");
+					break;
+				default:
+					UMW::Log("Spoof::WHAT");
+				}
+
+				Authority->MoveTo(TargetBlock);
+				Authority->SetHealthText(Health);
+			}
+			else
+			{
+				UMW::LogError("NIENEINEINE AUTHOR");
+			}
+		}
 	}
 	else
 	{
@@ -189,49 +233,97 @@ void AWarrior::MoveTo(ABlock* TargetBlock)
 void AWarrior::ServerMoveTo_Implementation(ABlock* TargetBlock)
 {
 	UMW::Log("Move To");
-	// TODO: Change the location of the warrior with interpolation and pathfinding.
-	if (CurrentBlock)
+	if (GetLocalRole() == ROLE_Authority)
 	{
-		if (CurrentBlock != TargetBlock)
+		// TODO: Change the location of the warrior with interpolation and pathfinding.
+		if (CurrentBlock)
 		{
-			SetActorLocation(TargetBlock->GetWarriorPosition());
+			if (CurrentBlock != TargetBlock)
+			{
+				if (TargetBlock)
+				{
+					SetActorLocation(TargetBlock->GetWarriorPosition());
+				}
+				else
+				{
+					UMW::LogError("AWarrior::ServerMoveTo No TargetBlock");
+				}
+			}
+
+			UpdateBlock(TargetBlock);
+
+			/*auto GameBase = GetWorld()->GetAuthGameMode();
+			if (GameBase)
+			{
+				AMultiplayer* MultiplayerGameMode = Cast<AMultiplayer>(GameBase);
+				if (MultiplayerGameMode)
+				{
+					MultiplayerGameMode->RegisterMovement(this, TargetBlock);
+				}
+			}*/
 		}
 
-		UpdateBlock(TargetBlock);
+		DealDamage();
 	}
-
-	DealDamage();
+	else
+	{
+		UMW::Log("AWarrior::ServerMoveTo Not auth");
+	}
 }
 
 // Update block information when moving between blocks.
 void AWarrior::UpdateBlock(ABlock* NewBlock)
 {
-	ServerUpdateBlock(NewBlock);
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		ServerUpdateBlock(NewBlock);
+	}
+	else
+	{
+		UMW::LogError("AWarrior::UpdateBlock Not Authorittee");
+	}
 }
 
 
 void AWarrior::ServerUpdateBlock_Implementation(ABlock* NewBlock)
 {
-	PreviousBlock = CurrentBlock;
+	if (NewBlock)
+	{
+		PreviousBlock = CurrentBlock;
 
-	CurrentBlock->Occupant = nullptr;
+		CurrentBlock->Occupant = nullptr;
 
-	UpdateBlockAttacks(CurrentBlock, NewBlock);
+		UMW::Log("AWarrior::ServerUpdateBlock Passed UpdateBlockAttacks()");
+		//UpdateBlockAttacks(CurrentBlock, NewBlock);
 
-	NewBlock->Occupant = this;
-	CurrentBlock = NewBlock;
+		if (NewBlock)
+		{
+			NewBlock->Occupant = this;
+		}
+		else
+		{
+			UMW::LogError("AWarrior::ServerUpdateBlock No NewBlock");
+		}
+
+		CurrentBlock = NewBlock;
+	}
 }
 
 // Update the attack references on the block.
 void AWarrior::UpdateBlockAttacks(ABlock* From, ABlock* To)
 {
+	ServerUpdateBlockAttacks(From, To);
+}
+
+void AWarrior::ServerUpdateBlockAttacks_Implementation(ABlock* Departing, ABlock* Arriving)
+{
 	// Prevent deducting attacks On Spawn.
-	if (From != To)
+	if (Departing != Arriving)
 	{
-		From->DeductAttacks(Affiliation);
+		Departing->DeductAttacks(Affiliation);
 	}
 
-	To->AppendAttacks(Affiliation);
+	Arriving->AppendAttacks(Affiliation);
 }
 
 
@@ -278,10 +370,21 @@ ABlock* AWarrior::MoveTowardsBlock(ABlock* Relative)
 	return Towards;
 }
 
+AWarrior* AWarrior::GetSelfWithAuthority()
+{
+	return UMapMaker::Instance->FindAuthorityWarrior(*this);
+}
+
 
 void AWarrior::SetHealthText(const int& NewHealth)
 {
-	if (GetLocalRole() == ROLE_Authority)
+	ServerSetHealthText();
+}
+
+void AWarrior::ServerSetHealthText_Implementation()
+{
+	UpdateHealthText(Health);
+	/*if (GetLocalRole() == ROLE_Authority)
 	{
 		if (HealthWidget)
 		{
@@ -291,25 +394,33 @@ void AWarrior::SetHealthText(const int& NewHealth)
 		{
 			UMW::LogError("AWarrior::SetHealthText No Health Widget");
 		}
-	}
+	}*/
 }
 
 // Revive some health.
 int AWarrior::Revive()
 {
+	ServerRevive();
+
+	return Health;
+}
+
+void AWarrior::ServerRevive_Implementation()
+{
 	int NewHealth = FMath::Min<int>(Health + 1, 20);
 	Health = NewHealth;
-	SetHealthText(Health);
-
-	return NewHealth;
 }
 
 
 // Take damage.
 void AWarrior::DeductHealth()
 {
+	ServerDeductHealth();
+}
+
+void AWarrior::ServerDeductHealth_Implementation()
+{
 	Health -= Damage;
-	SetHealthText(Health);
 
 	if (HealthIsFatal())
 	{

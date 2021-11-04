@@ -53,6 +53,7 @@ public:
 	UFUNCTION(Server, Reliable)
 		void ServerSpawnWarriors();
 
+	AWarrior* FindAuthorityWarrior(const AWarrior& InCompare);
 
 protected:
 

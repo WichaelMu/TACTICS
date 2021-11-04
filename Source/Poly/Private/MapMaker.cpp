@@ -700,6 +700,20 @@ void UMapMaker::SpawnWarriors()
 	ServerSpawnWarriors();
 }
 
+AWarrior* UMapMaker::FindAuthorityWarrior(const AWarrior& InCompare)
+{
+	for (int32 i = 0; i < AllWarriors.Num(); ++i)
+	{
+		UMW::Log(FString::Printf(TEXT("In: %i. Compare: %i"), AllWarriors[i]->Identifier, InCompare.Identifier));
+		if (AllWarriors[i]->Identifier == InCompare.Identifier)
+		{
+			return AllWarriors[i];
+		}
+	}
+
+	return nullptr;
+}
+
 void UMapMaker::ServerSpawnWarriors_Implementation()
 {
 	// Static T template's memory persist. Flush the Poisson Disc occupancy.

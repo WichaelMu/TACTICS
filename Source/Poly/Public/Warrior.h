@@ -36,6 +36,9 @@ public:
 	static int32 NumberOfHuman;
 	static int32 EvaluateMap();
 
+	UPROPERTY(Replicated)
+		uint32 Identifier;
+
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void OnSpawn(ABlock* SpawnedBlock, EAffiliation TeamAffiliation);
@@ -51,29 +54,38 @@ public:
 	void MoveTo(ABlock* TargetBlock);
 	UFUNCTION(Server, Reliable, NetMulticast)
 		void ServerMoveTo(ABlock* TargetBlock);
-	UFUNCTION(BlueprintImplementableEvent)
-		void RegisterMovement(ABlock* TargetBlock);
 	UFUNCTION(BlueprintCallable)
 	void UpdateBlock(ABlock* NewBlock);
 	UFUNCTION(Server, Reliable, NetMulticast)
 		void ServerUpdateBlock(ABlock* NewBlock);
 	void UpdateBlockAttacks(ABlock* Departing, ABlock* Arriving);
+	UFUNCTION(Server, Reliable, NetMulticast)
+		void ServerUpdateBlockAttacks(ABlock* Departing, ABlock* Arriving);
 
 
-	UPROPERTY(Replicated, VisibleAnywhere, Category = Health)
+	UPROPERTY(ReplicatedUsing = SetHealthText, VisibleAnywhere, Category = Health)
 		int Health;
-	void SetHealthText(const int& NewHealth);
+	UFUNCTION()
+		void SetHealthText(const int& NewHealth);
+	UFUNCTION(Server, Reliable, NetMulticast)
+		void ServerSetHealthText();
+	UFUNCTION(BlueprintImplementableEvent)
+		void UpdateHealthText(const int& NewHealth);
 	UPROPERTY(Replicated)
 		UWarriorHealthWidget* HealthWidget;
 	int Revive();
+	UFUNCTION(Server, Reliable, NetMulticast)
+		void ServerRevive();
 	// The damage this warrior will deal.
 	const float Damage = 2;
 	void DeductHealth();
+	UFUNCTION(Server, Reliable, NetMulticast)
+		void ServerDeductHealth();
 
 	TArray<AWarrior*> GetAttackableWarriors();
 	
 	// The block this warrior is standing on.
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite)
 		ABlock* CurrentBlock;
 	UPROPERTY(Replicated)
 		ABlock* PreviousBlock;
@@ -126,6 +138,7 @@ private:
 
 	ABlock* MoveTowardsBlock(ABlock* Relative);
 
+	AWarrior* GetSelfWithAuthority();
 };
 
 int32 AWarrior::NumberOfAI = 0;

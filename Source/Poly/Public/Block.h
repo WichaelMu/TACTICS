@@ -98,7 +98,11 @@ public:
 	bool IsNextToAffiliation(const EAffiliation& RelativeTo);
 
 	void DeductAttacks(EAffiliation DeductingAffiliation);
+	UFUNCTION(Server, Reliable)
+		void ServerDeductAttacks(EAffiliation DeductingAffiliation);
 	void AppendAttacks(EAffiliation AppendingAffiliation);
+	UFUNCTION(Server, Reliable)
+		void ServerAppendAttacks(EAffiliation AppendingAffiliation);
 
 private:
 

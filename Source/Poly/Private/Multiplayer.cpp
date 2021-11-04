@@ -32,9 +32,28 @@ void AMultiplayer::InitGame(const FString& MapName, const FString& Options, FStr
 	APawn* P2 = GetWorld()->SpawnActor<APawn>(DefaultPawnClass, FVector::ZeroVector, FRotator(0, -65.f, 65.f));
 }
 
-void AMultiplayer::RegisterMovement(AWarrior& WarriorToMove, ABlock& BlockDestination)
+void AMultiplayer::RegisterMovement(AWarrior* WarriorToMove, ABlock* BlockDestination)
 {
-	WarriorToMove.SetActorLocation(BlockDestination.GetWarriorPosition());
+	WarriorToMove->SetActorLocation(BlockDestination->GetWarriorPosition());
+
+	WarriorToMove->PreviousBlock = WarriorToMove->CurrentBlock;
+
+	WarriorToMove->CurrentBlock->Occupant = nullptr;
+
+	UMW::Log("AMultplayer::RegisterMovement Passed UpdateBlockAttacks()");
+	//UpdateBlockAttacks(CurrentBlock, NewBlock);
+
+	if (BlockDestination)
+	{
+		BlockDestination->Occupant = WarriorToMove;
+	}
+	else
+	{
+		UMW::LogError("AMultiplayer::RegisterMovement No BlockDestination");
+	}
+
+	WarriorToMove->CurrentBlock = BlockDestination;
+	
 	UMW::Log("AMultiplayer::RegisterMovement Called");
 }
 
