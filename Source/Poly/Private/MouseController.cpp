@@ -8,7 +8,6 @@
 #include "Block.h"
 #include "MapMaker.h"
 #include "Net/UnrealNetwork.h"
-#include "Multiplayer.h"
 
 
 // Sets default values
@@ -31,33 +30,6 @@ void AMouseController::BeginPlay()
 	MoveAmplifier = MinimumCameraMovementSpeed * 4;
 
 	SetActorRotation(FRotator(-65.f, 65.f, 0.f));
-
-	if (GetLocalRole() == ROLE_Authority)
-	{
-		auto GameMode = GetWorld()->GetAuthGameMode();
-		if (GameMode)
-		{
-			AMultiplayer* MultiplayerGameMode = Cast<AMultiplayer>(GameMode);
-
-			if (MultiplayerGameMode)
-			{
-				Multiplayer = MultiplayerGameMode;
-				UMW::Log("Found MP GM");
-			}
-			else
-			{
-				UMW::LogError("AMouseController::BeginPlay No MultiplayerGameMode");
-			}
-		}
-		else
-		{
-			UMW::LogError("AMouseController::BeginPlay No GameMode");
-		}
-	}
-	else
-	{
-		UMW::LogError("AMouseController::BeginPlay Not Authority");
-	}
 }
 
 
