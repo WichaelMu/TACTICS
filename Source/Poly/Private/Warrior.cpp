@@ -106,11 +106,11 @@ void AWarrior::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 	// ...
 
 	DOREPLIFETIME(AWarrior, Health);
-	DOREPLIFETIME(AWarrior, CurrentBlock);
 	DOREPLIFETIME(AWarrior, PreviousBlock);
 	DOREPLIFETIME(AWarrior, Affiliation);
 	DOREPLIFETIME(AWarrior, HealthWidget);
 	DOREPLIFETIME(AWarrior, Identifier);
+	DOREPLIFETIME(AWarrior, CurrentBlock);
 }
 
 
@@ -249,17 +249,7 @@ void AWarrior::ServerMoveTo_Implementation(ABlock* TargetBlock)
 				}
 			}
 
-			UpdateBlock(TargetBlock);
-
-			/*auto GameBase = GetWorld()->GetAuthGameMode();
-			if (GameBase)
-			{
-				AMultiplayer* MultiplayerGameMode = Cast<AMultiplayer>(GameBase);
-				if (MultiplayerGameMode)
-				{
-					MultiplayerGameMode->RegisterMovement(this, TargetBlock);
-				}
-			}*/
+			UpdateBlock(UMapMaker::Instance->FindAuthorityBlock(*TargetBlock));
 		}
 
 		DealDamage();
@@ -267,6 +257,18 @@ void AWarrior::ServerMoveTo_Implementation(ABlock* TargetBlock)
 	else
 	{
 		UMW::Log("AWarrior::ServerMoveTo Not auth");
+	}
+}
+
+void AWarrior::SetCurrentBlock_Implementation(ABlock* NewCurrentBlock)
+{
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		if (NewCurrentBlock)
+		{
+			UMW::Log("@@@@@@@@@@@@ AWarrior::SetCurrentBlock Should be set @@@@@@@@@@@@@@@@@@2");
+			CurrentBlock = NewCurrentBlock;
+		}
 	}
 }
 
@@ -287,28 +289,18 @@ void AWarrior::UpdateBlock(ABlock* NewBlock)
 
 void AWarrior::ServerUpdateBlock_Implementation(ABlock* NewBlock)
 {
-	if (NewBlock)
-	{
-		PreviousBlock = CurrentBlock;
+	PreviousBlock = CurrentBlock;
 
-		CurrentBlock->Occupant = nullptr;
+	CurrentBlock->Occupant = nullptr;
 
-		UMW::Log("AWarrior::ServerUpdateBlock Passed UpdateBlockAttacks()");
-		//UpdateBlockAttacks(CurrentBlock, NewBlock);
+	UMW::Log("AWarrior::ServerUpdateBlock Passed UpdateBlockAttacks()");
+	//UpdateBlockAttacks(CurrentBlock, NewBlock);
 
-		// Problematic. Always nullptr for some reason.
-		// This is the reason why play only goes to a depth of one.
-		if (NewBlock)
-		{
-			NewBlock->Occupant = this;
-		}
-		else
-		{
-			UMW::LogError("AWarrior::ServerUpdateBlock No NewBlock");
-		}
+	// Problematic. Always nullptr for some reason.
+	// This is the reason why play only goes to a depth of one.
+	NewBlock->Occupant = this;
 
-		CurrentBlock = NewBlock;
-	}
+	CurrentBlock = NewBlock;
 }
 
 // Update the attack references on the block.

@@ -16,6 +16,9 @@ ABlock::ABlock()
 
 	AIAttacked    = 0;
 	HumanAttacked = 0;
+
+	SetReplicates(true);
+	bAlwaysRelevant = true;
 }
 
 

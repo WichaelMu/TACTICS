@@ -54,6 +54,11 @@ public:
 		void ServerSpawnWarriors();
 
 	AWarrior* FindAuthorityWarrior(const AWarrior& InCompare);
+	ABlock* FindAuthorityBlock(const ABlock&InCompare);
+	UFUNCTION(Server, Reliable, NetMulticast)
+		void UpdateAllBlocks();
+
+	void RegisterWarrior(AWarrior* In, ABlock* Mark);
 
 protected:
 

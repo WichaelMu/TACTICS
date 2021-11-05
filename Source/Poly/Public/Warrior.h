@@ -54,6 +54,8 @@ public:
 	void MoveTo(ABlock* TargetBlock);
 	UFUNCTION(Server, Reliable, NetMulticast)
 		void ServerMoveTo(ABlock* TargetBlock);
+	UFUNCTION(Server, Reliable, NetMulticast)
+		void SetCurrentBlock(ABlock* NewCurrentBlock);
 	UFUNCTION(BlueprintCallable)
 	void UpdateBlock(ABlock* NewBlock);
 	UFUNCTION(Server, Reliable, NetMulticast)
@@ -85,7 +87,7 @@ public:
 	TArray<AWarrior*> GetAttackableWarriors();
 	
 	// The block this warrior is standing on.
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite)
+	UPROPERTY(Replicated, BlueprintReadOnly)
 		ABlock* CurrentBlock;
 	UPROPERTY(Replicated)
 		ABlock* PreviousBlock;

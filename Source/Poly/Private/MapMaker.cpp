@@ -55,8 +55,8 @@ UMapMaker::UMapMaker()
 	ContinentsSeed = 0;
 	EquatorSeed = 0;
 
-	XMap = 50;
-	YMap = 50;
+	XMap = 25;
+	YMap = 25;
 
 	NumberOfWarriors = 6;
 
@@ -706,7 +706,7 @@ AWarrior* UMapMaker::FindAuthorityWarrior(const AWarrior& InCompare)
 {
 	for (int32 i = 0; i < AllWarriors.Num(); ++i)
 	{
-		UMW::Log(FString::Printf(TEXT("In: %i. Compare: %i"), AllWarriors[i]->Identifier, InCompare.Identifier));
+		//UMW::Log(FString::Printf(TEXT("In: %i. Compare: %i"), AllWarriors[i]->Identifier, InCompare.Identifier));
 		if (AllWarriors[i]->Identifier == InCompare.Identifier)
 		{
 			return AllWarriors[i];
@@ -714,6 +714,31 @@ AWarrior* UMapMaker::FindAuthorityWarrior(const AWarrior& InCompare)
 	}
 
 	return nullptr;
+}
+
+ABlock* UMapMaker::FindAuthorityBlock(const ABlock& InCompare)
+{
+	return Map[InCompare.Index];
+}
+
+void UMapMaker::UpdateAllBlocks_Implementation()
+{
+	UMW::Log("MADE");
+	for (ABlock* MapBlock : Map)
+	{
+		if (MapBlock->Occupant)
+		{
+			FindAuthorityWarrior(*MapBlock->Occupant)->CurrentBlock = MapBlock;
+			MapBlock->SetActorLocation(MapBlock->GetActorLocation() + FVector(0, 0, 200));
+			UMW::Log("Moved");
+		}
+	}
+
+}
+
+void UMapMaker::RegisterWarrior(AWarrior* In, ABlock* Mark)
+{
+	In->CurrentBlock = Mark;
 }
 
 void UMapMaker::ServerSpawnWarriors_Implementation()
