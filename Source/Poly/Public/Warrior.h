@@ -131,6 +131,8 @@ private:
 
 	UFUNCTION(BlueprintCallable)
 		void DealDamage();
+	UFUNCTION(Server, Reliable, NetMulticast)
+		void ServerDealDamage();
 	bool HealthIsFatal();
 	void KillThisWarrior();
 	UFUNCTION(Server, Reliable, NetMulticast)

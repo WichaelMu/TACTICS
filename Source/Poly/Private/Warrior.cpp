@@ -219,7 +219,7 @@ void AWarrior::MoveTo(ABlock* TargetBlock)
 			}
 			else
 			{
-				UMW::LogError("NIENEINEINE AUTHOR");
+				UMW::LogError("No Authority");
 			}
 		}
 	}
@@ -813,6 +813,11 @@ ABlock* AWarrior::FindNearestHumanAffiliation(const EAffiliation& Nearest)
 
 
 void AWarrior::DealDamage()
+{
+	ServerDealDamage();
+}
+
+void AWarrior::ServerDealDamage_Implementation()
 {
 	TArray<AWarrior*> SurroundingWarriors = GetAttackableWarriors();
 

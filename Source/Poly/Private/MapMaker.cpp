@@ -55,8 +55,8 @@ UMapMaker::UMapMaker()
 	ContinentsSeed = 0;
 	EquatorSeed = 0;
 
-	XMap = 30;
-	YMap = 30;
+	XMap = 50;
+	YMap = 50;
 
 	NumberOfWarriors = 6;
 
@@ -423,7 +423,7 @@ TArray<float> UMapMaker::GenerateContinents()
 	// Initialise to all zeroes.
 	Continents.Init(0, XMap * YMap);
 
-	float Offset = ContinentsSeed == 0 ? 470639692.33f : ContinentsSeed;
+	float Offset = ContinentsSeed == 0 ? 132427.33f : ContinentsSeed;
 	UMW::Log("Continents Seed: " + FString::SanitizeFloat(Offset) + " at " + FString::SanitizeFloat(SplitScale) + " Scale.");
 
 	for (int y = 0; y < YMap; ++y)
