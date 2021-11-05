@@ -25,12 +25,14 @@ UMapMaker::UMapMaker()
 
 	TerrainScale = .15f;
 
-	FalloffBias   = 4.4f;
-	CurveStrength = 3.f;
+	bUseFalloffMap = true;
+	FalloffBias    = 4.4f;
+	CurveStrength  = 3.f;
 
+	bGenerateContinents = true;
 	SplitLimit     = .43f;
 	SplitDistance  = .15f;
-	SplitScale = .06f;
+	SplitScale     = .06f;
 
 	WaterLimits    = .15f;
 	ShallowLimits  = .2f;
@@ -43,9 +45,9 @@ UMapMaker::UMapMaker()
 	EquatorBias	 = 10.f;
 	EquatorStrength  = 15.f;
 	EquatorSpread	 = .45f;
-	EquatorScale = .15f;
+	EquatorScale	 = .15f;
 
-	bGeneratePoissonSpawning = true;
+	bGeneratePoissonSpawning  = true;
 	IterationsBeforeRejection = 30;
 	MinimumDistance		  = 3;
 
@@ -53,10 +55,10 @@ UMapMaker::UMapMaker()
 	ContinentsSeed = 0;
 	EquatorSeed = 0;
 
-	XMap = 25;
-	YMap = 25;
+	XMap = 30;
+	YMap = 30;
 
-	NumberOfWarriors = 3;
+	NumberOfWarriors = 6;
 
 	static ConstructorHelpers::FClassFinder<ABlock> SandBlock(TEXT("/Game/Blueprints/BP_Sand"));
 	if (SandBlock.Succeeded())

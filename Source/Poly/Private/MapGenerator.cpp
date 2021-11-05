@@ -39,7 +39,8 @@ void AMapGenerator::Tick(float DeltaTime)
 
 	// ...
 
-	if (bGenerateMap)
+	// This is obsolete. Map generation is now done on entry.
+	/*if (bGenerateMap)
 	{
 		if (MapMaker)
 		{
@@ -51,13 +52,13 @@ void AMapGenerator::Tick(float DeltaTime)
 		}
 
 		bGenerateMap = !bGenerateMap;
-	}
+	}*/
 }
 
 
 bool AMapGenerator::ShouldTickIfViewportsOnly() const
 {
-	return true;
+	return false;
 }
 
 void AMapGenerator::InitialiseGame()
@@ -67,6 +68,7 @@ void AMapGenerator::InitialiseGame()
 	Instance = this;
 }
 
+// This is where the game begins to take place.
 void AMapGenerator::ServerInitialiseGame_Implementation()
 {
 	if (MapMaker && GetLocalRole() == ROLE_Authority)

@@ -229,13 +229,12 @@ void AWarrior::MoveTo(ABlock* TargetBlock)
 	}
 }
 
-
+// Move this Warrior and update it across all clients.
 void AWarrior::ServerMoveTo_Implementation(ABlock* TargetBlock)
 {
 	UMW::Log("Move To");
 	if (GetLocalRole() == ROLE_Authority)
 	{
-		// TODO: Change the location of the warrior with interpolation and pathfinding.
 		if (CurrentBlock)
 		{
 			if (CurrentBlock != TargetBlock)
@@ -274,6 +273,7 @@ void AWarrior::ServerMoveTo_Implementation(ABlock* TargetBlock)
 // Update block information when moving between blocks.
 void AWarrior::UpdateBlock(ABlock* NewBlock)
 {
+	// Only update the Authority.
 	if (GetLocalRole() == ROLE_Authority)
 	{
 		ServerUpdateBlock(NewBlock);
@@ -296,6 +296,8 @@ void AWarrior::ServerUpdateBlock_Implementation(ABlock* NewBlock)
 		UMW::Log("AWarrior::ServerUpdateBlock Passed UpdateBlockAttacks()");
 		//UpdateBlockAttacks(CurrentBlock, NewBlock);
 
+		// Problematic. Always nullptr for some reason.
+		// This is the reason why play only goes to a depth of one.
 		if (NewBlock)
 		{
 			NewBlock->Occupant = this;
@@ -370,6 +372,7 @@ ABlock* AWarrior::MoveTowardsBlock(ABlock* Relative)
 	return Towards;
 }
 
+// Get this Warrior's Authority counterpart.
 AWarrior* AWarrior::GetSelfWithAuthority()
 {
 	return UMapMaker::Instance->FindAuthorityWarrior(*this);

@@ -151,6 +151,7 @@ THeap<T>::THeap(T* Default, int32 Size)
 template <typename T>
 THeap<T>::~THeap()
 {
+	// It is assumed that T : UObject.
 	Items.Empty();
 }
 
