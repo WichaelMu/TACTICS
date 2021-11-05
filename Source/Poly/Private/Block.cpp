@@ -147,16 +147,16 @@ void ABlock::Selected(bool bSelected)
 void ABlock::ServerSelected_Implementation(bool bSelected)
 {
 	// When selected.
-	if (bSelected)
-	{
-		//SetActorScale3D(FVector(.5f, .5f, .5f));
+	//if (bSelected)
+	//{
+	//	//SetActorScale3D(FVector(.5f, .5f, .5f));
 
-		// Registers which Blocks are traversable.
-		if (AMouseController::Instance)
-		{
-			//AMouseController::Instance->Traversable = GetTraversableBlocks();
-		}
-	}
+	//	// Registers which Blocks are traversable.
+	//	if (AMouseController::Instance)
+	//	{
+	//		//AMouseController::Instance->Traversable = GetTraversableBlocks();
+	//	}
+	//}
 
 	// Show the white tiles?
 	SetTraversableVisibility(bSelected);

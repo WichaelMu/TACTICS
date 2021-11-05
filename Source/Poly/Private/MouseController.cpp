@@ -140,7 +140,7 @@ void AMouseController::EndTurn()
 		// Ending Human turn.
 		if (CurrentTurn == EAffiliation::HUMAN1) // Ending P1 turn.
 		{
-			UMW::Log("Ending P1");
+			UMW::Log("P2's Turn.");
 
 			// What happens when the Human ends their turn.
 
@@ -149,7 +149,7 @@ void AMouseController::EndTurn()
 		}
 		else if (CurrentTurn == EAffiliation::HUMAN2) // Ending P2 turn.
 		{
-			UMW::Log("Ending P2");
+			UMW::Log("AI's Turn.");
 
 			// Move on to AI.
 			CurrentTurn = EAffiliation::AI;
@@ -165,7 +165,7 @@ void AMouseController::EndTurn()
 		}
 		else // Ending AI turn.
 		{
-			UMW::Log("Ending AI");
+			UMW::Log("P1's Turn");
 
 			// What happens when the AI ends their turn.
 
@@ -248,24 +248,24 @@ void AMouseController::LMBPressed(ABlock* ClickedBlock)
 
 void AMouseController::ServerLMBPressed_Implementation(ABlock* ClickedBlock)
 {
-	UMW::Log("1: Execution begins.");
+	/*UMW::Log("1: Execution begins.");*/
 	// If a block is already selected.
 	if (CurrentlySelectedBlock)
 	{
-		UMW::Log("2: A Block is already selected. Marked for deselection.");
+		/*UMW::Log("2: A Block is already selected. Marked for deselection.");*/
 		// Mark the block for deselection.
 		CurrentlySelectedBlock->Selected(false);
 
 		if (CurrentlySelectedWarrior)
 		{
-			UMW::Log("3: A Warrior is already selected.");
+			/*UMW::Log("3: A Warrior is already selected.");*/
 			if (!ClickedBlock->Occupant)
 			{
-				UMW::Log("4: This Block does NOT have an occupant.");
+				/*UMW::Log("4: This Block does NOT have an occupant.");*/
 				// If the clicked block is traversable and the selected warrior has not already moved.
 				if (Traversable.Contains(ClickedBlock) && !AlreadyMovedWarriors.Contains(CurrentlySelectedWarrior))
 				{
-					UMW::Log("5: This block is in Traversable and this Warrior has not moved. Moving.");
+					/*UMW::Log("5: This block is in Traversable and this Warrior has not moved. Moving.");*/
 					
 					// Allow movement.
 					CurrentlySelectedWarrior->MoveTo(ClickedBlock);
@@ -275,7 +275,7 @@ void AMouseController::ServerLMBPressed_Implementation(ABlock* ClickedBlock)
 				}
 			}
 		}
-		UMW::Log("6: Clearing Traversable and nullifying selection.");
+		/*UMW::Log("6: Clearing Traversable and nullifying selection.");*/
 		// Disallow any other warriors from moving to a previously traversable block.
 		ClearTraversable();
 
@@ -284,18 +284,18 @@ void AMouseController::ServerLMBPressed_Implementation(ABlock* ClickedBlock)
 	}
 	else // If there is no selected block.
 	{
-		UMW::Log("7: No Block selected.");
+		/*UMW::Log("7: No Block selected.");*/
 		// Don't do anything if the clicked block is NOT occupied.
 		if (ClickedBlock->Occupant)
 		{
-			UMW::Log("8: This Block IS occupied.");
+			/*UMW::Log("8: This Block IS occupied.");*/
 			// If the clicked block's occupant is the on the current turn's affiliation.
 			if (ClickedBlock->Occupant->Affiliation == CurrentTurn)
 			{
-				UMW::Log("9: The occupied Warrior is the Current Turn.");
+				/*UMW::Log("9: The occupied Warrior is the Current Turn.");*/
 				if (!AlreadyMovedWarriors.Contains(ClickedBlock->Occupant))
 				{
-					UMW::Log("10: This Warrior has NOT moved. Marking for selection.");
+					/*UMW::Log("10: This Warrior has NOT moved. Marking for selection.");*/
 					// Set the selected block to the clicked block.
 					CurrentlySelectedBlock = ClickedBlock;
 					// Mark it for selection.
@@ -309,7 +309,7 @@ void AMouseController::ServerLMBPressed_Implementation(ABlock* ClickedBlock)
 		}
 	}
 
-	UMW::Log("OUT");
+	/*UMW::Log("OUT");*/
 }
 
 void AMouseController::ClearTraversable()

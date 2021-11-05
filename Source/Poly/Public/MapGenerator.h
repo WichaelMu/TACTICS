@@ -26,8 +26,9 @@ public:
 
 	virtual bool ShouldTickIfViewportsOnly() const override;
 
-	UPROPERTY(EditAnywhere)
-		bool bGenerateMap;
+	// This is obsolete. Map generation is now done on entry.
+	/*UPROPERTY(EditAnywhere)
+		bool bGenerateMap;*/
 
 	void InitialiseGame();
 	UFUNCTION(Server, Reliable)

@@ -125,7 +125,7 @@ void AWarrior::ServerOnSpawn_Implementation(ABlock* SpawnedBlock, EAffiliation T
 	Health = 20;
 
 	this->Affiliation = TeamAffiliation;
-	UMW::Log("AWarrior::OnSpawn Warrior Spawned");
+
 	if (SpawnedBlock)
 	{
 		// Default Previous and Current Block to the block this Warrior spawned on.
@@ -158,29 +158,6 @@ void AWarrior::ServerOnSpawn_Implementation(ABlock* SpawnedBlock, EAffiliation T
 // Move this warrior to TargetBlock.
 void AWarrior::MoveTo(ABlock* TargetBlock)
 {
-	UMW::Log("Is Being Called");
-	UMW::Log("Warrior count: " + FString::SanitizeFloat(NumberOfHuman));
-	switch (GetLocalRole())
-	{
-	case ROLE_Authority:
-		UMW::Log("AWarrior::AUTH");
-		break;
-	case ROLE_AutonomousProxy:
-		UMW::Log("AWarrior::PROX");
-		break;
-	case ROLE_SimulatedProxy:
-		UMW::Log("AWarrior::SIMU");
-		break;
-	case ROLE_None:
-		UMW::Log("AWarrior::NONE");
-		break;
-	case ROLE_MAX:
-		UMW::Log("AWarrior::MAX");
-		break;
-	default:
-		UMW::Log("AWarrior::WHAT");
-	}
-
 	if (TargetBlock)
 	{
 		if (GetLocalRole() == ROLE_Authority)
@@ -189,50 +166,20 @@ void AWarrior::MoveTo(ABlock* TargetBlock)
 		}
 		else
 		{
-			UMW::LogError("This Warrior is not Authority");
 			AWarrior* Authority = GetSelfWithAuthority();
 			if (Authority)
 			{
-				switch (Authority->GetLocalRole())
-				{
-				case ROLE_Authority:
-					UMW::Log("Spoof::AUTH");
-					break;
-				case ROLE_AutonomousProxy:
-					UMW::Log("Spoof::PROX");
-					break;
-				case ROLE_SimulatedProxy:
-					UMW::Log("Spoof::SIMU");
-					break;
-				case ROLE_None:
-					UMW::Log("Spoof::NONE");
-					break;
-				case ROLE_MAX:
-					UMW::Log("Spoof::MAX");
-					break;
-				default:
-					UMW::Log("Spoof::WHAT");
-				}
 
 				Authority->MoveTo(TargetBlock);
 				Authority->SetHealthText(Health);
 			}
-			else
-			{
-				UMW::LogError("No Authority");
-			}
 		}
-	}
-	else
-	{
-		UMW::LogError("AWarrior::MoveTo No TargetBlock");
 	}
 }
 
 // Move this Warrior and update it across all clients.
 void AWarrior::ServerMoveTo_Implementation(ABlock* TargetBlock)
 {
-	UMW::Log("Move To");
 	if (GetLocalRole() == ROLE_Authority)
 	{
 		if (CurrentBlock)
@@ -243,20 +190,12 @@ void AWarrior::ServerMoveTo_Implementation(ABlock* TargetBlock)
 				{
 					SetActorLocation(TargetBlock->GetWarriorPosition());
 				}
-				else
-				{
-					UMW::LogError("AWarrior::ServerMoveTo No TargetBlock");
-				}
 			}
 
 			UpdateBlock(UMapMaker::Instance->FindAuthorityBlock(*TargetBlock));
 		}
 
 		DealDamage();
-	}
-	else
-	{
-		UMW::Log("AWarrior::ServerMoveTo Not auth");
 	}
 }
 
@@ -266,7 +205,6 @@ void AWarrior::SetCurrentBlock_Implementation(ABlock* NewCurrentBlock)
 	{
 		if (NewCurrentBlock)
 		{
-			UMW::Log("@@@@@@@@@@@@ AWarrior::SetCurrentBlock Should be set @@@@@@@@@@@@@@@@@@2");
 			CurrentBlock = NewCurrentBlock;
 		}
 	}
@@ -280,10 +218,6 @@ void AWarrior::UpdateBlock(ABlock* NewBlock)
 	{
 		ServerUpdateBlock(NewBlock);
 	}
-	else
-	{
-		UMW::LogError("AWarrior::UpdateBlock Not Authorittee");
-	}
 }
 
 
@@ -293,11 +227,8 @@ void AWarrior::ServerUpdateBlock_Implementation(ABlock* NewBlock)
 
 	CurrentBlock->Occupant = nullptr;
 
-	UMW::Log("AWarrior::ServerUpdateBlock Passed UpdateBlockAttacks()");
-	//UpdateBlockAttacks(CurrentBlock, NewBlock);
+	UpdateBlockAttacks(CurrentBlock, NewBlock);
 
-	// Problematic. Always nullptr for some reason.
-	// This is the reason why play only goes to a depth of one.
 	NewBlock->Occupant = this;
 
 	CurrentBlock = NewBlock;
@@ -314,10 +245,10 @@ void AWarrior::ServerUpdateBlockAttacks_Implementation(ABlock* Departing, ABlock
 	// Prevent deducting attacks On Spawn.
 	if (Departing != Arriving)
 	{
-		Departing->DeductAttacks(Affiliation);
+		UMapMaker::Instance->FindAuthorityBlock(*Departing)->DeductAttacks(Affiliation);
 	}
 
-	Arriving->AppendAttacks(Affiliation);
+	UMapMaker::Instance->FindAuthorityBlock(*Arriving)->AppendAttacks(Affiliation);
 }
 
 
@@ -379,17 +310,6 @@ void AWarrior::SetHealthText(const int& NewHealth)
 void AWarrior::ServerSetHealthText_Implementation()
 {
 	UpdateHealthText(Health);
-	/*if (GetLocalRole() == ROLE_Authority)
-	{
-		if (HealthWidget)
-		{
-			HealthWidget->SetHealthText(NewHealth);
-		}
-		else
-		{
-			UMW::LogError("AWarrior::SetHealthText No Health Widget");
-		}
-	}*/
 }
 
 // Revive some health.
@@ -557,7 +477,6 @@ ABlock* AWarrior::FindKillableHuman()
 		}
 		else
 		{
-			UMW::LogError("AWarrior::FindKillableHuman No Winning");
 			return CurrentBlock;
 		}
 	}

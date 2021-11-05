@@ -55,8 +55,8 @@ UMapMaker::UMapMaker()
 	ContinentsSeed = 0;
 	EquatorSeed = 0;
 
-	XMap = 25;
-	YMap = 25;
+	XMap = 50;
+	YMap = 50;
 
 	NumberOfWarriors = 6;
 
@@ -165,19 +165,8 @@ void UMapMaker::BeginPlay()
 
 void UMapMaker::GenerateLargestConcentrationOfHumans()
 {
-	if (Instance->Map.Num() == 0)
-	{
-		UMW::Log("NULL AMP " + FString::SanitizeFloat(Instance->Map.Num()));
-	}
-	return;
 	TArray<ABlock*> CopyOfMap = Instance->Map;
 	ABlock* MaxHuman = CopyOfMap[MapMidPoint()];
-	if (!MaxHuman)
-	{
-		UMW::Log("NUL");
-	}
-	UMW::Log("MAP");
-	return;
 
 	// Defualt the largest concentration of Humans to the centre of the map.
 	if (AWarrior::NumberOfHuman == 0)
@@ -217,11 +206,6 @@ void UMapMaker::GenerateLargestConcentrationOfHumans()
 
 void UMapMaker::GenerateLargestConcentrationOfAI()
 {
-	if (Instance->Map.Num() == 0)
-	{
-		UMW::Log("NULL AMP " + FString::SanitizeFloat(Instance->Map.Num()));
-	}
-	return;
 	TArray<ABlock*> CopyOfMap = Instance->Map;
 
 	ABlock* MaxAI = CopyOfMap[MapMidPoint()];
@@ -719,21 +703,6 @@ AWarrior* UMapMaker::FindAuthorityWarrior(const AWarrior& InCompare)
 ABlock* UMapMaker::FindAuthorityBlock(const ABlock& InCompare)
 {
 	return Map[InCompare.Index];
-}
-
-void UMapMaker::UpdateAllBlocks_Implementation()
-{
-	UMW::Log("MADE");
-	for (ABlock* MapBlock : Map)
-	{
-		if (MapBlock->Occupant)
-		{
-			FindAuthorityWarrior(*MapBlock->Occupant)->CurrentBlock = MapBlock;
-			MapBlock->SetActorLocation(MapBlock->GetActorLocation() + FVector(0, 0, 200));
-			UMW::Log("Moved");
-		}
-	}
-
 }
 
 void UMapMaker::RegisterWarrior(AWarrior* In, ABlock* Mark)
