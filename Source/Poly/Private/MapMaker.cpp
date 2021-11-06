@@ -360,7 +360,18 @@ void UMapMaker::SpawnBlock(UClass* Class, const int& X, const int& Y, EType Terr
 
 void UMapMaker::ServerSpawnBlock_Implementation(UClass* Class, const int& X, const int& Y, EType TerrainType)
 {
-	ABlock* NewBlock = GetWorld()->SpawnActor<ABlock>(Class, FVector(X * 100, Y * 100, 0), FRotator::ZeroRotator);
+	// Get a random altitude level for a variation in the map.
+	// Does not require replication; does not add to functionality.
+	const float AltitudeCeiling = 10;
+	float RandomAltitude = FMath::RandRange(-AltitudeCeiling, AltitudeCeiling);
+
+	// Water can't go below a zero altitude.
+	if (TerrainType == EType::WATER)
+	{
+		RandomAltitude = (RandomAltitude + AltitudeCeiling) * .5f;
+	}
+
+	ABlock* NewBlock = GetWorld()->SpawnActor<ABlock>(Class, FVector(X * 100, Y * 100, RandomAltitude), FRotator::ZeroRotator);
 	Map.Add(NewBlock);
 	NewBlock->Index = Y * XMap + X;
 	NewBlock->Type = TerrainType;
