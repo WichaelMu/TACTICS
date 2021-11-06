@@ -23,6 +23,6 @@ void AMultiplayer::InitGame(const FString& MapName, const FString& Options, FStr
 	}
 
 	// Spawn the players. Otherwise, they won't spawn and might crash, for some reason.
-	APawn* P1 = GetWorld()->SpawnActor<APawn>(DefaultPawnClass, FVector::ZeroVector, FRotator(0, -65.f, 65.f));
-	APawn* P2 = GetWorld()->SpawnActor<APawn>(DefaultPawnClass, FVector::ZeroVector, FRotator(0, -65.f, 65.f));
+	APawn* P1 = GetWorld()->SpawnActor<APawn>(DefaultPawnClass, FVector::ZeroVector, FRotator(0, -45.f, 45.f));
+	APawn* P2 = GetWorld()->SpawnActor<APawn>(DefaultPawnClass, FVector::ZeroVector, FRotator(0, -45.f, 45.f));
 }
