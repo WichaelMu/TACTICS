@@ -68,7 +68,11 @@ void AMapGenerator::ServerInitialiseGame_Implementation()
 {
 	if (MapMaker && GetLocalRole() == ROLE_Authority)
 	{
-		MapMaker->GenerateBlocks();
+		const float TerrainSeed = FMath::RandRange(-10000.f, 10000.f);
+		const float ContinentsSeed = FMath::RandRange(-10000.f, 10000.f);
+		const float EquatorSeed = FMath::RandRange(-10000.f, 10000.f);
+
+		MapMaker->GenerateBlocks(TerrainSeed, ContinentsSeed, EquatorSeed);
 	}
 }
 

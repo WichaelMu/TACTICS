@@ -30,7 +30,7 @@ public:
 	static ABlock* HumanConcentration;
 	static ABlock* AIConcentration;
 
-	void GenerateBlocks();
+	void GenerateBlocks(const float& TerrainSeed, const float& ContinentsSeed, const float& EquatorSeed);
 
 	ABlock* RandomBlock();
 	UPROPERTY(Replicated)

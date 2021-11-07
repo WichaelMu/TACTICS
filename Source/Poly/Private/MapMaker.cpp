@@ -781,7 +781,7 @@ ABlock* UMapMaker::GetPoissonOrRandomBlock()
 }
 
 
-void UMapMaker::GenerateBlocks()
+void UMapMaker::GenerateBlocks(const float& _TerrainSeed, const float& _ContinentsSeed, const float& _EquatorSeed)
 {
 	// Something is very wrong if there is no block.
 	// If there is no block, it may be resetting the Block after compiling in UE4.
@@ -799,6 +799,10 @@ void UMapMaker::GenerateBlocks()
 
 	XExtent = XMap - 1;
 	YExtent = YMap - 1;
+
+	this->TerrainSeed = _TerrainSeed;
+	this->ContinentsSeed = _ContinentsSeed;
+	this->EquatorSeed = _EquatorSeed;
 
 	PlaceBlocks();
 	ConnectBlocks();
