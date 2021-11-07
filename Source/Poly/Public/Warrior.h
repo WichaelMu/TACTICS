@@ -115,7 +115,7 @@ protected:
 
 
 private:
-	const FVector WarriorScale = FVector(.01f, .01f, .015f);
+	const FVector WarriorScale = FVector(.25f, .25f, .75f);
 
 
 	// Retreat.
