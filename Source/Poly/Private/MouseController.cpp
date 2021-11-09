@@ -29,7 +29,7 @@ void AMouseController::BeginPlay()
 
 	MoveAmplifier = MinimumCameraMovementSpeed * 4;
 
-	SetActorRotation(FRotator(-65.f, 45.f, 0.f));
+	SetActorRotation(FRotator(-45.f, 45.f, 0.f));
 }
 
 
